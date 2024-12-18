@@ -1,6 +1,8 @@
+# Student_Management/app/index.py
 
-from flask import render_template
+from flask import request, redirect, render_template, flash, url_for
 from flask import Flask
+from Student_Management.app import app
 
 app = Flask(__name__)
 
