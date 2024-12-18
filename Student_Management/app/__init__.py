@@ -16,8 +16,11 @@ app.config["SQLALCHEMY_DATABASE_URI"] ="mysql+pymysql://root:%s@localhost/school
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 
+db = SQLAlchemy(app)
+
+
+
+login=LoginManager(app)
 cloudinary.config(cloud_name='ds05mb5xf',
                   api_key='129254722258642',
                   api_secret='OQScAUMjqFmA3g6gog1GfBRCM14')
-
-login=LoginManager(app)
