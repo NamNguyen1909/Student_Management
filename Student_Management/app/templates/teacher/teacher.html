@@ -4,134 +4,148 @@
 
 {% block content %}
 
-<!--Navbar-->
-<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="javascript:void(0)">Logo</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <!--Navbar-->
+    <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="javascript:void(0)">Logo</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-    <div class="collapse navbar-collapse" id="mynavbar">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-            <a class="nav-link" href="/">Trang chủ</a>
-        </li>
+            <div class="collapse navbar-collapse" id="mynavbar">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Trang chủ</a>
+                    </li>
 
-        <li class="nav-item">
-          <a class="nav-link" href="/teacher/editscore">Nhập / sửa điểm</a>
-        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/teacher/editscore">Nhập / sửa điểm</a>
+                    </li>
 
-        <li class="nav-item">
-          <a class="nav-link" href="/teacher/result">Xem bảng điểm</a>
-        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/teacher/result">Xem bảng điểm</a>
+                    </li>
 
-      </ul>
+                </ul>
 
-      <!-- Thêm ms-auto để căn khối này sang phải -->
-      <ul class="navbar-nav ms-auto">
-        {% if current_user.is_authenticated %}
-        <li class="nav-item mr-3 ml-3">
-          <a class="nav-link text-danger" href="/teacher">
-              <img src="{{current_user.avatar}}" width="30" class="rounded-circle">
-              <span class="ms-3">{{current_user.username}}</span>
-          </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link text-info" href="/logout">Đăng xuất</a>
-        </li>
-        {% else %}
-        <li class="nav-item">
-            <a class="nav-link text-danger" href="/login">Đăng nhập</a>
-        </li>
-        {% endif %}
-      </ul>
+                <!-- Thêm ms-auto để căn khối này sang phải -->
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item mr-3 ml-3">
+                            <a class="nav-link text-danger" href="/teacher">
+                                <img src="{{ current_user.avatar }}" width="30" class="rounded-circle">
+                                <span class="ms-3">{{ current_user.username }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-info" href="/logout">Đăng xuất</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-danger" href="/login">Đăng nhập</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!--Personal Information Section-->
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Bảng 1: Thông tin cá nhân -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Thông tin cá nhân
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <img src="{{ current_user.avatar }}" alt="Avatar" class="rounded-circle" width="120">
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Tên:</strong> {{ current_user.name }}</li>
+                            <li class="list-group-item"><strong>Ngày
+                                sinh:</strong> {{ current_user.dob.strftime('%d/%m/%Y') if current_user.dob else 'Chưa cập nhật' }}
+                            </li>
+                            <li class="list-group-item"><strong>Giới
+                                tính:</strong> {{ 'Nam' if current_user.sex else 'Nữ' }}</li>
+                            <li class="list-group-item"><strong>Địa
+                                chỉ:</strong> {{ current_user.address or 'Chưa cập nhật' }}</li>
+                            <li class="list-group-item"><strong>Email:</strong> {{ current_user.email }}</li>
+                            <li class="list-group-item"><strong>Số điện thoại:</strong> {{ current_user.phone }}</li>
+                            <li class="list-group-item"><strong>Vai trò:</strong>
+                                {% if current_user.user_role == UserRole.ADMIN %}
+                                    Người quản trị
+                                {% elif current_user.user_role == UserRole.TEACHER %}
+                                    Giáo viên
+                                {% elif current_user.user_role == UserRole.EMPLOYEE %}
+                                    Nhân viên
+                                {% elif current_user.user_role == UserRole.STUDENT %}
+                                    Học sinh
+                                {% endif %}
+                            </li>
+                            <!-- Hiển thị trạng thái "Đang dạy" hoặc "Đã nghỉ" -->
+                            <li class="list-group-item">
+                                <strong>Trạng thái:</strong>
+                                {% if current_user.is_active %}
+                                    Đang dạy
+                                {% else %}
+                                    Đã nghỉ
+                                {% endif %}
+                            </li>
+
+                            <li class="list-group-item"><strong>Username:</strong> {{ current_user.username }}</li>
+
+                            <li class="list-group-item">
+                                <a href="/changepassword" class="btn btn-sm btn-warning">Đổi mật khẩu</a>
+                            </li>
+
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng 2: Danh sách các môn học -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Danh sách các môn đã dạy
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead class="table-primary">
+                            <tr>
+                                <th>#</th>
+                                <th>Tên môn học</th>
+                                <th>Mã môn học</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% if current_user.teachers %}
+                                {% for subject in current_user.teachers[0].subjects %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ subject.name }}</td>
+                                        <td>{{ subject.id }}</td> <!-- Assuming 'id' as the subject code -->
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Không có dữ liệu</td>
+                                </tr>
+                            {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</nav>
-
-<!--Personal Information Section-->
-<div class="container mt-4">
-  <div class="row">
-    <!-- Bảng 1: Thông tin cá nhân -->
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header bg-primary text-white">
-          Thông tin cá nhân
-        </div>
-        <div class="card-body">
-          <div class="text-center mb-3">
-            <img src="{{current_user.avatar}}" alt="Avatar" class="rounded-circle" width="120">
-          </div>
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item"><strong>Tên:</strong> {{current_user.name}}</li>
-            <li class="list-group-item"><strong>Ngày sinh:</strong> {{current_user.dob.strftime('%d/%m/%Y') if current_user.dob else 'Chưa cập nhật'}}</li>
-            <li class="list-group-item"><strong>Giới tính:</strong> {{ 'Nam' if current_user.sex else 'Nữ' }}</li>
-            <li class="list-group-item"><strong>Địa chỉ:</strong> {{current_user.address or 'Chưa cập nhật'}}</li>
-            <li class="list-group-item"><strong>Email:</strong> {{current_user.email}}</li>
-            <li class="list-group-item"><strong>Số điện thoại:</strong> {{current_user.phone}}</li>
-
-            <!-- Hiển thị trạng thái "Đang dạy" hoặc "Đã nghỉ" -->
-            <li class="list-group-item">
-              <strong>Trạng thái:</strong>
-              {% if current_user.is_active %}
-                Đang dạy
-              {% else %}
-                Đã nghỉ
-              {% endif %}
-            </li>
-
-            <li class="list-group-item"><strong>Username:</strong> {{current_user.username}}</li>
-
-            <li class="list-group-item">
-                <a href="/changepassword" class="btn btn-sm btn-warning">Đổi mật khẩu</a>
-            </li>
-
-
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bảng 2: Danh sách các môn học -->
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header bg-primary text-white">
-          Danh sách các môn đã dạy
-        </div>
-        <div class="card-body">
-          <table class="table table-bordered">
-            <thead class="table-primary">
-              <tr>
-                <th>#</th>
-                <th>Tên môn học</th>
-                <th>Mã môn học</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if current_user.teachers %}
-              {% for subject in current_user.teachers[0].subjects %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ subject.name }}</td>
-                <td>{{ subject.id }}</td> <!-- Assuming 'id' as the subject code -->
-              </tr>
-              {% endfor %}
-              {% else %}
-              <tr>
-                <td colspan="3" class="text-center">Không có dữ liệu</td>
-              </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 
 
 
 
-{%endblock%}
+{% endblock %}

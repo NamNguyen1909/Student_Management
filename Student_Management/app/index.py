@@ -47,23 +47,23 @@ def login_process():
 @app.route("/admin")
 @login_required
 def admin_dashboard():
-    return render_template('admin.html')
+    return render_template('admin/admin.html', UserRole=UserRole)
 
 @app.route("/student")
 @login_required
 def student_dashboard():
-    return render_template('student.html')
+    return render_template('student/student.html', UserRole=UserRole)
 
 @app.route("/teacher")
 @login_required
 def teacher_dashboard():
-    return render_template('teacher/teacher.html')
+    return render_template('teacher/teacher.html', UserRole=UserRole)
 
 @app.route("/employee")
 @login_required
 def employee_dashboard():
     classes = dao.employee_classes()
-    return render_template('employee/employee.html', classes=classes)
+    return render_template('employee/employee.html', UserRole=UserRole, classes=classes)
 
 @login.user_loader
 def load_user(id):
