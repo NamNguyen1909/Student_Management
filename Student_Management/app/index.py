@@ -1,6 +1,6 @@
 # Student_Management/app/index.py
 
-from flask import request, redirect, render_template, flash, url_for
+from flask import request, redirect, render_template, flash, url_for,session
 from flask import Flask
 from Student_Management.app import app,login,dao
 from flask_login import login_user, logout_user, login_required
@@ -75,6 +75,47 @@ def load_user(user_id):
 def logout_process():
     logout_user()
     return redirect('/login')
+
+@app.route("/changepassword", methods=["GET", "POST"])
+def changepassword():
+    # Kiểm tra nếu người dùng đã đăng nhập
+    if "user_id" not in session:
+        flash("Vui lòng đăng nhập trước", "warning")
+        return redirect(url_for('login_process'))
+
+    # Lấy người dùng từ session hoặc cơ sở dữ liệu
+    user = User.query.get(session["user_id"])
+
+    # Nếu người dùng không tồn tại, chuyển hướng đến trang đăng nhập
+    if not user:
+        flash("Người dùng không hợp lệ", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == "POST":
+        # Lấy mật khẩu mới từ biểu mẫu
+        new_password = request.form["new_password"]
+        # Mã hóa mật khẩu mới
+        hashed_password = generate_md5_hash(new_password)
+
+        # Cập nhật mật khẩu trong cơ sở dữ liệu
+        user.password = hashed_password
+        db.session.commit()
+
+        flash("Mật khẩu đã được thay đổi thành công!", "success")
+
+        # Kiểm tra vai trò của người dùng và chuyển hướng tới trang tương ứng
+        if user.user_role == UserRole.ADMIN:
+            return redirect("admin/admin.html")
+        elif user.user_role == UserRole.TEACHER:
+            return redirect("teacher/teacher.html")
+        elif user.user_role == UserRole.EMPLOYEE:
+            return redirect("/employee/employee.html")
+        elif user.user_role == UserRole.STUDENT:
+            return redirect("/student/student.html")
+        else:
+            return redirect("/index.html")  # Default redirect
+
+    return render_template("changepassword.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
