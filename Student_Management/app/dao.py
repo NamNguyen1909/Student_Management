@@ -29,6 +29,38 @@ def teach(teacher_id, subject_id):
         db.session.commit()
         print(f"Đã thêm giảng viên {teacher_id} dạy môn {subject_id}.")
 
+
+
+# =================================================================================================================
+
+# Mã hóa mật khẩu
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+import base64
+
+# Tạo khóa bí mật (khóa này phải được bảo mật và cùng một khóa được dùng để mã hóa và giải mã)
+key = get_random_bytes(16)  # AES yêu cầu khóa có độ dài 16, 24 hoặc 32 byte
+cipher = AES.new(key, AES.MODE_CBC)
+
+# Mã hóa mật khẩu
+def encrypt_password(password):
+    # Đảm bảo rằng mật khẩu có độ dài hợp lệ (sử dụng padding)
+    padded_password = pad(password.encode('utf-8'), AES.block_size)
+    encrypted = cipher.encrypt(padded_password)
+    # Trả về kết quả mã hóa dưới dạng base64 để dễ dàng lưu trữ
+    return base64.b64encode(cipher.iv + encrypted).decode('utf-8')
+
+# Giải mã mật khẩu
+def decrypt_password(encrypted_password):
+    encrypted_password_bytes = base64.b64decode(encrypted_password)
+    iv = encrypted_password_bytes[:16]  # Lấy IV
+    encrypted = encrypted_password_bytes[16:]  # Lấy phần mã hóa
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    decrypted = unpad(cipher.decrypt(encrypted), AES.block_size)
+    return decrypted.decode('utf-8')
+
 # =================================================================================================================
 
 def generate_username(role_prefix, user_role):
@@ -72,7 +104,7 @@ def create_fake_data():
     for admin in admins:
         user = User(
             username=generate_username("AD", UserRole.ADMIN),
-            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
+            password=encrypt_password("123456"),
             name=admin["name"],
             sex=True,
             dob=admin["dob"],
@@ -108,7 +140,7 @@ def create_fake_data():
     for emp in employees:
         user = User(
             username=generate_username("EM", UserRole.EMPLOYEE),
-            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
+            password=encrypt_password("123456"),
             name=emp["name"],
             sex=True,
             dob=emp["dob"],
@@ -176,7 +208,7 @@ def create_fake_data():
     for stu in students:
         user = User(
             username=generate_username("ST", UserRole.STUDENT),
-            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
+            password=encrypt_password("123456"),
             name=stu["name"],
             sex=True,
             dob=stu["dob"],
@@ -221,7 +253,7 @@ def create_fake_data():
     for teacher in teachers:
         user = User(
             username=generate_username("TC", UserRole.TEACHER),
-            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
+            password=encrypt_password("123456"),
             name=teacher["name"],
             sex=True,
             dob=teacher["dob"],
