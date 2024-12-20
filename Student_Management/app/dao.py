@@ -8,7 +8,7 @@ from flask_login import current_user
 
 
 def auth_user(username,password,role=None):
-    password = decrypt_password(password)
+    password = generate_md5_hash(password)
 
     u= User.query.filter(User.username.__eq__(username.strip()),
                              User.password.__eq__(password))

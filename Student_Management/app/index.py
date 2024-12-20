@@ -59,11 +59,8 @@ def student_dashboard():
 @app.route("/teacher")
 @login_required
 def teacher_dashboard():
-    decrypted_password = None
-    if current_user.is_authenticated:
-        decrypted_password = get_decrypted_password(current_user.id)
 
-    return render_template('teacher/teacher.html', decrypted_password=decrypted_password)
+    return render_template('teacher/teacher.html')
 
 @app.route("/employee")
 @login_required
