@@ -77,19 +77,8 @@ def logout_process():
     return redirect('/login')
 
 @app.route("/changepassword", methods=["GET", "POST"])
+@login_required
 def changepassword():
-    # Kiểm tra nếu người dùng đã đăng nhập
-    if "user_id" not in session:
-        flash("Vui lòng đăng nhập trước", "warning")
-        return redirect(url_for('login_process'))
-
-    # Lấy người dùng từ session hoặc cơ sở dữ liệu
-    user = User.query.get(session["user_id"])
-
-    # Nếu người dùng không tồn tại, chuyển hướng đến trang đăng nhập
-    if not user:
-        flash("Người dùng không hợp lệ", "danger")
-        return redirect(url_for('login'))
 
     if request.method == "POST":
         # Lấy mật khẩu mới từ biểu mẫu
@@ -98,22 +87,22 @@ def changepassword():
         hashed_password = generate_md5_hash(new_password)
 
         # Cập nhật mật khẩu trong cơ sở dữ liệu
-        user.password = hashed_password
+        current_user.password = hashed_password
         db.session.commit()
 
         flash("Mật khẩu đã được thay đổi thành công!", "success")
 
         # Kiểm tra vai trò của người dùng và chuyển hướng tới trang tương ứng
-        if user.user_role == UserRole.ADMIN:
-            return redirect("admin/admin.html")
-        elif user.user_role == UserRole.TEACHER:
-            return redirect("teacher/teacher.html")
-        elif user.user_role == UserRole.EMPLOYEE:
-            return redirect("/employee/employee.html")
-        elif user.user_role == UserRole.STUDENT:
-            return redirect("/student/student.html")
+        if current_user.user_role == UserRole.ADMIN:
+            return redirect("/admin")
+        elif current_user.user_role == UserRole.TEACHER:
+            return redirect("/teacher")
+        elif current_user.user_role == UserRole.EMPLOYEE:
+            return redirect("/employee")
+        elif current_user.user_role == UserRole.STUDENT:
+            return redirect("/student")
         else:
-            return redirect("/index.html")  # Default redirect
+            return redirect("/")  # Default redirect
 
     return render_template("changepassword.html")
 
