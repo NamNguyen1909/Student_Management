@@ -50,7 +50,82 @@
   </div>
 </nav>
 
-<!--Personal information-->
+<!--Personal Information Section-->
+<div class="container mt-4">
+  <div class="row">
+    <!-- Bảng 1: Thông tin cá nhân -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          Thông tin cá nhân
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-3">
+            <img src="{{current_user.avatar}}" alt="Avatar" class="rounded-circle" width="120">
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><strong>Tên:</strong> {{current_user.name}}</li>
+            <li class="list-group-item"><strong>Ngày sinh:</strong> {{current_user.dob.strftime('%d/%m/%Y') if current_user.dob else 'Chưa cập nhật'}}</li>
+            <li class="list-group-item"><strong>Giới tính:</strong> {{ 'Nam' if current_user.sex else 'Nữ' }}</li>
+            <li class="list-group-item"><strong>Địa chỉ:</strong> {{current_user.address or 'Chưa cập nhật'}}</li>
+            <li class="list-group-item"><strong>Email:</strong> {{current_user.email}}</li>
+            <li class="list-group-item"><strong>Số điện thoại:</strong> {{current_user.phone}}</li>
+            <li class="list-group-item">
+              <strong>Mật khẩu:</strong>
+              <input type="password" id="passwordField" class="form-control d-inline-block w-75" value="{{current_user.password}}" readonly>
+              <button class="btn btn-sm btn-secondary" onclick="togglePassword()">Hiện</button>
+              <a href="/teacher/changepassword" class="btn btn-sm btn-warning">Đổi mật khẩu</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bảng 2: Danh sách các môn học -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          Danh sách các môn đã dạy
+        </div>
+        <div class="card-body">
+          <table class="table table-bordered">
+            <thead class="table-primary">
+              <tr>
+                <th>#</th>
+                <th>Tên môn học</th>
+                <th>Mã môn học</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for subject in current_user.teachers[0].subjects %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ subject.name }}</td>
+                <td>{{ subject.code }}</td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="3" class="text-center">Không có dữ liệu</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePassword() {
+    const passwordField = document.getElementById('passwordField');
+    if (passwordField.type === 'password') {
+      passwordField.type = 'text';
+    } else {
+      passwordField.type = 'password';
+    }
+  }
+</script>
 
 
 {%endblock%}
