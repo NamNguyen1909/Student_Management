@@ -1,3 +1,5 @@
+<!--Student_Management/app/templates/teacher/teacher.html-->
+
 {% extends 'layout/base.html' %}
 
 {% block content %}
@@ -23,13 +25,36 @@
         <li class="nav-item">
           <a class="nav-link" href="#">Xem bảng điểm</a>
         </li>
+
       </ul>
-      <form class="d-flex">
-        <input class="form-control me-2" type="text" placeholder="Search">
-        <button class="btn btn-primary" type="button">Search</button>
-      </form>
+
+      <!-- Thêm ms-auto để căn khối này sang phải -->
+      <ul class="navbar-nav ms-auto">
+        {% if current_user.is_authenticated %}
+        <li class="nav-item mr-3 ml-3">
+          <a class="nav-link text-danger" href="/teacher">
+              <img src="{{current_user.avatar}}" width="30" class="rounded-circle">
+              <span class="ms-3">{{current_user.username}}</span>
+          </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-info" href="/logout">Đăng xuất</a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+            <a class="nav-link text-danger" href="/login">Đăng nhập</a>
+        </li>
+        {% endif %}
+      </ul>
     </div>
   </div>
 </nav>
+
+<!--Feature-->
+{%block feature required%}
+
+<!--làm tình năng trong đây-->
+
+{%endblock%}
 
 {%endblock%}

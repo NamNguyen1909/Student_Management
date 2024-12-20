@@ -53,7 +53,7 @@ def student_dashboard():
 @app.route("/teacher")
 @login_required
 def teacher_dashboard():
-    return render_template('teacher.html')
+    return render_template('teacher/teacher.html')
 
 @app.route("/employee")
 @login_required
