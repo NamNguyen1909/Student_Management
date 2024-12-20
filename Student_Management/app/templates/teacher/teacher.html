@@ -70,6 +70,17 @@
             <li class="list-group-item"><strong>Địa chỉ:</strong> {{current_user.address or 'Chưa cập nhật'}}</li>
             <li class="list-group-item"><strong>Email:</strong> {{current_user.email}}</li>
             <li class="list-group-item"><strong>Số điện thoại:</strong> {{current_user.phone}}</li>
+            <li class="list-group-item"><strong>Vai trò:</strong>
+                {% if current_user.user_role == UserRole.ADMIN %}
+                    Người quản trị
+                {% elif current_user.user_role == UserRole.TEACHER %}
+                    Giáo viên
+                {% elif current_user.user_role == UserRole.EMPLOYEE %}
+                    Nhân viên
+                {% elif current_user.user_role == UserRole.STUDENT %}
+                    Học sinh
+                {% endif %}
+            </li>
 
             <!-- Hiển thị trạng thái "Đang dạy" hoặc "Đã nghỉ" -->
             <li class="list-group-item">
