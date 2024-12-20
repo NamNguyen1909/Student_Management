@@ -3,7 +3,7 @@
 from flask import request, redirect, render_template, flash, url_for
 from flask import Flask
 from Student_Management.app import app,login,dao
-from flask_login import login_user, logout_user
+from flask_login import login_user, logout_user, login_required
 from Student_Management.app.models import UserRole,User
 
 
@@ -41,18 +41,22 @@ def login_process():
     return render_template('login.html')
 
 @app.route("/admin")
+@login_required
 def admin_dashboard():
     return render_template('admin.html')
 
 @app.route("/student")
+@login_required
 def student_dashboard():
     return render_template('student.html')
 
 @app.route("/teacher")
+@login_required
 def teacher_dashboard():
     return render_template('teacher.html')
 
 @app.route("/employee")
+@login_required
 def employee_dashboard():
     return render_template('employee.html')
 
