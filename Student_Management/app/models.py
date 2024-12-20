@@ -69,9 +69,16 @@ class Admin(db.Model):
 # Student Table
 class Student(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     grade_level_id = Column(Integer, ForeignKey(GradeLevel.id), nullable=True)
     class_id = Column(Integer, ForeignKey(Class.id), nullable=False)  # Khóa ngoại trỏ đến Class
+
+    address = Column(String(255), nullable=True)
+    phone = Column(String(20), nullable=True)
+    email = Column(String(100), nullable=True)
+    sex = Column(Boolean, default=True)
+    dob = Column(DateTime, nullable=True)
 
     # Relationships
     # user = relationship('User', backref='student', uselist=False)
@@ -97,7 +104,6 @@ class Employee(db.Model):
 
     # Relationships
     # user = relationship('User', backref='employee', uselist=False)
-
 
 
 

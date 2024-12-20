@@ -5,8 +5,6 @@ from flask import Flask
 from Student_Management.app import app,login,dao
 from flask_login import login_user, logout_user, login_required
 from Student_Management.app.models import UserRole,User
-
-
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
@@ -59,17 +57,17 @@ def student_dashboard():
 @app.route("/teacher")
 @login_required
 def teacher_dashboard():
-
     return render_template('teacher/teacher.html')
 
 @app.route("/employee")
 @login_required
 def employee_dashboard():
-    return render_template('employee.html')
+    classes = dao.employee_classes()
+    return render_template('employee/employee.html', classes=classes)
 
 @login.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+def load_user(id):
+    return dao.get_user_by_id(id)
 
 @app.route("/logout")
 def logout_process():
@@ -107,4 +105,4 @@ def changepassword():
     return render_template("changepassword.html")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

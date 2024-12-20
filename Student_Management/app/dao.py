@@ -148,16 +148,18 @@ def create_fake_data():
     grade_level_objects = []
     for name in grade_levels:
         grade = GradeLevel(name=name)
+
         db.session.add(grade)
         db.session.commit()
-        grade_level_objects.append(grade)
 
+        grade_level_objects.append(grade)
     # 4. Tạo Classes
     classes = [
         {"name": "10A1", "grade_level": grade_level_objects[0]},
         {"name": "11B2", "grade_level": grade_level_objects[1]},
         {"name": "12C3", "grade_level": grade_level_objects[2]},
     ]
+
     class_objects = []
     for cls in classes:
         class_item = Class(name=cls["name"], grade_level_id=cls["grade_level"].id)
@@ -174,6 +176,7 @@ def create_fake_data():
             "phone": "0912345670",
             "email": "lan.nguyen@example.com",
             "class": class_objects[0],
+            "grade_level": grade_level_objects[0]
         },
         {
             "name": "Trần Minh Quân",
@@ -182,6 +185,7 @@ def create_fake_data():
             "phone": "0912345671",
             "email": "quan.tran@example.com",
             "class": class_objects[1],
+            "grade_level": grade_level_objects[1]
         },
         {
             "name": "Lê Thị Mai",
@@ -190,9 +194,11 @@ def create_fake_data():
             "phone": "0912345672",
             "email": "mai.le@example.com",
             "class": class_objects[2],
+            "grade_level": grade_level_objects[2]
         },
     ]
     for stu in students:
+
         user = User(
             username=generate_username("ST", UserRole.STUDENT),
             password=generate_md5_hash("123456"),
@@ -204,10 +210,21 @@ def create_fake_data():
             email=stu["email"],
             user_role=UserRole.STUDENT,
         )
+
         db.session.add(user)
         db.session.commit()
 
-        student_record = Student(user_id=user.id, class_id=stu["class"].id)
+        student_record = Student(
+            user_id=user.id,
+            class_id=stu["class"].id,
+            name=stu["name"],
+            address=stu["address"],
+            phone=stu["phone"],
+            email=stu["email"],
+            sex=stu.get("sex", True),
+            dob=stu["dob"],
+            grade_level=stu["grade_level"],
+        )
         db.session.add(student_record)
         db.session.commit()
 
@@ -291,6 +308,14 @@ def create_fake_data():
         db.session.add(regulation_item)
         db.session.commit()  # Commit sau khi thêm tất cả các quy định
     print("Dữ liệu giả đã được tạo thành công!")
+
+def get_user_by_id(id):
+    return User.query.get(id)
+
+def employee_classes():
+    # Lấy danh sách lớp học từ cơ sở dữ liệu
+    classes = Class.query.all()
+    return classes
 
 if __name__ == '__main__':
     with app.app_context():
