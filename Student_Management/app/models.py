@@ -138,7 +138,8 @@ class Subject(db.Model):
 class Semester(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
-
+    year = Column(String(20), nullable=False)
+    
     # Relationships
     results = relationship('Result', backref='semester', lazy=True)
     subjects = relationship('Subject', secondary='semester_subject', backref='semesters')  # Nhiều môn học
@@ -376,11 +377,18 @@ def create_fake_data():
         subject_objects.append(subject)
 
     # 8. Tạo Semesters
-    semesters = ["Học kỳ 1", "Học kỳ 2"]
-    for name in semesters:
-        semester = Semester(name=name)
-        db.session.add(semester)
-        db.session.commit()
+    semesters = [
+        {"name": "Học kỳ 1", "year": "2024-2025"},
+        {"name": "Học kỳ 2", "year": "2024-2025"}
+    ]
+
+    # Thêm từng học kỳ vào database
+    for semester_data in semesters:
+        name = semester_data["name"]  # Lấy giá trị name
+        year = semester_data["year"]  # Lấy giá trị year
+        semester = Semester(name=name, year=year)  # Tạo đối tượng Semester
+        db.session.add(semester)  # Thêm vào phiên giao dịch
+        db.session.commit()  # Lưu tất cả thay đổi
 
     # 6. Tạo Regulations
     regulations = [
@@ -403,8 +411,8 @@ def create_fake_data():
 
 if __name__ == '__main__':
     with app.app_context():  # Đảm bảo có app context
-        # db.create_all()  # Chạy để tạo DB
-        # db.session.commit()
+        db.create_all()  # Chạy để tạo DB
+        db.session.commit()
         create_fake_data()
         print("Dữ liệu giả đã được tạo thành công!")
 
