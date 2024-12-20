@@ -1,11 +1,12 @@
 # Student_Management/app/models.py
+import hashlib
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, Enum, DateTime
 from enum import Enum as RoleEnum
 from flask_login import UserMixin
 from datetime import datetime
-from Student_Management.app import app,db
+from . import app,db
 
 
 def generate_username(role_prefix, user_role):
@@ -211,7 +212,7 @@ def create_fake_data():
     for admin in admins:
         user = User(
             username=generate_username("AD", UserRole.ADMIN),
-            password="123456",
+            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
             name=admin["name"],
             sex=True,
             dob=admin["dob"],
@@ -247,7 +248,7 @@ def create_fake_data():
     for emp in employees:
         user = User(
             username=generate_username("EM", UserRole.EMPLOYEE),
-            password="123456",
+            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
             name=emp["name"],
             sex=True,
             dob=emp["dob"],
@@ -315,7 +316,7 @@ def create_fake_data():
     for stu in students:
         user = User(
             username=generate_username("ST", UserRole.STUDENT),
-            password="123456",
+            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
             name=stu["name"],
             sex=True,
             dob=stu["dob"],
@@ -351,7 +352,7 @@ def create_fake_data():
     for teacher in teachers:
         user = User(
             username=generate_username("TC", UserRole.TEACHER),
-            password="123456",
+            password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
             name=teacher["name"],
             sex=True,
             dob=teacher["dob"],
@@ -394,8 +395,7 @@ def create_fake_data():
     regulations = [
         {"name": "Độ tuổi tối thiểu", "value": 15, "note": "Học sinh phải từ 15 tuổi trở lên"},
         {"name": "Độ tuổi tối đa", "value": 20, "note": "Học sinh không được quá 20 tuổi"},
-        {"name": "Sĩ số tối đa mỗi lớp", "value": 40, "note": "Tối đa 40 học sinh trong một lớp học"},
-        {"name": "Thời gian học tối đa", "value": 4, "note": "Thời gian học không quá 4 năm"}
+        {"name": "Sĩ số tối đa mỗi lớp", "value": 40, "note": "Tối đa 40 học sinh trong một lớp học"}
     ]
 
     for regulation in regulations:
