@@ -84,10 +84,7 @@
             <li class="list-group-item"><strong>Username:</strong> {{current_user.username}}</li>
 
             <li class="list-group-item">
-              <strong>Mật khẩu:</strong>
-              <input type="password" id="passwordField" class="form-control d-inline-block w-75" value="{{current_user.password}}" readonly>
-              <button class="btn btn-sm btn-secondary" onclick="togglePassword()">Hiện</button>
-              <a href="/teacher/changepassword" class="btn btn-sm btn-warning">Đổi mật khẩu</a>
+                <a href="/changepassword" class="btn btn-sm btn-warning">Đổi mật khẩu</a>
             </li>
 
 
@@ -133,16 +130,7 @@
   </div>
 </div>
 
-<script>
-  function togglePassword() {
-    const passwordField = document.getElementById('passwordField');
-    if (passwordField.type === 'password') {
-      passwordField.type = 'text';
-    } else {
-      passwordField.type = 'password';
-    }
-  }
-</script>
+
 
 
 

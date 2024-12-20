@@ -7,6 +7,12 @@ from flask_login import login_user, logout_user, login_required
 from Student_Management.app.models import UserRole,User
 
 
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+import base64
+from flask_login import current_user
+from Student_Management.app.dao import *
 
 @app.route("/")
 def index():
@@ -53,7 +59,11 @@ def student_dashboard():
 @app.route("/teacher")
 @login_required
 def teacher_dashboard():
-    return render_template('teacher/teacher.html')
+    decrypted_password = None
+    if current_user.is_authenticated:
+        decrypted_password = get_decrypted_password(current_user.id)
+
+    return render_template('teacher/teacher.html', decrypted_password=decrypted_password)
 
 @app.route("/employee")
 @login_required
