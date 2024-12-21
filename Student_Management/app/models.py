@@ -185,6 +185,16 @@ class SemesterSubject(db.Model):
     semester = db.relationship('Semester', backref='semester_subjects')
     subject = db.relationship('Subject', backref='semester_subjects')
 
+class ClassSubject(db.Model):
+    __tablename__ = 'class_subject'
+
+    class_id = db.Column(db.Integer, db.ForeignKey('class.id'), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), primary_key=True)
+
+    class_ = db.relationship('Class', backref='class_subjects')
+    subject = db.relationship('Subject', backref='class_subjects')
+
+
 
 if __name__ == '__main__':
     with app.app_context():  # Đảm bảo có app context

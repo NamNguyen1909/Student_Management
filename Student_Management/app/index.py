@@ -1,6 +1,6 @@
 # Student_Management/app/index.py
 
-from flask import request, redirect, render_template, flash, url_for,session
+from flask import request, redirect, render_template, flash, url_for,session,jsonify
 from flask import Flask
 from Student_Management.app import app,login,dao
 from flask_login import login_user, logout_user, login_required
@@ -105,6 +105,65 @@ def changepassword():
             return redirect("/")  # Default redirect
 
     return render_template("changepassword.html")
+
+@app.route('/teacher/editscore')
+def edit_score():
+    return render_template('/teacher/edit_score.html')
+
+@app.route('/get_subjects', methods=['GET'])
+def get_subjects():
+    try:
+        # Lấy Teacher dựa trên current_user
+        teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+        if not teacher:
+            return jsonify({'error': 'User is not a teacher'}), 403
+
+        # Lấy danh sách môn học
+        subjects = Subject.query.join(TeacherSubject).filter(TeacherSubject.teacher_id == teacher.id).all()
+        subject_list = [{'id': s.id, 'name': s.name} for s in subjects]
+        return jsonify(subject_list)
+    except Exception as e:
+        print(f"Error fetching subjects: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/get_classes', methods=['GET'])
+def get_classes():
+    subject_id = request.args.get('subject_id')
+    classes = ClassSubject.query.filter_by(subject_id=subject_id).all()
+    class_list = [{'id': c.class_.id, 'name': c.class_.name} for c in classes]
+    return jsonify(class_list)
+
+@app.route('/get_semesters', methods=['GET'])
+def get_semesters():
+    subject_id = request.args.get('subject_id')
+    semesters = SemesterSubject.query.filter_by(subject_id=subject_id).all()
+    semester_list = [{'id': s.semester.id, 'name': s.semester.name} for s in semesters]
+    return jsonify(semester_list)
+
+@app.route('/get_students', methods=['GET'])
+def get_students():
+    try:
+        class_id = request.args.get('class_id', type=int)
+        subject_id = request.args.get('subject_id', type=int)
+
+        if not class_id or not subject_id:
+            return jsonify({'error': 'Missing class_id or subject_id'}), 400
+
+        # Truy vấn danh sách học sinh thuộc lớp và môn học
+        students = Student.query.join(StudentSubject).filter(
+            StudentSubject.subject_id == subject_id,
+            Student.class_id == class_id
+        ).all()
+
+        # Trả về danh sách học sinh
+        student_list = [{'id': s.id, 'name': s.user.name} for s in students]
+        return jsonify(student_list)
+
+    except Exception as e:
+        print(f"Error fetching students: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
