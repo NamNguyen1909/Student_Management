@@ -1,8 +1,8 @@
 # Student_Management/app/dao.py
 
 import hashlib
-from Student_Management.app import app, db
-from Student_Management.app.models import *
+from app import app, db
+from app.models import *
 import cloudinary.uploader
 from flask_login import current_user
 

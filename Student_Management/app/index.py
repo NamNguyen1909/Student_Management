@@ -1,9 +1,9 @@
 from flask import request, redirect, render_template, flash, url_for, session, jsonify
 from flask import Flask
-from Student_Management.app import app, login, dao
+from app import app, login, dao
 from flask_login import login_user, logout_user, login_required
-from Student_Management.app.models import UserRole, User, Teacher, Subject, TeacherSubject, ClassSubject, SemesterSubject, Student, StudentSubject
-from Student_Management.app.dao import *
+from app.models import UserRole, User, Teacher, Subject, TeacherSubject, ClassSubject, SemesterSubject, Student, StudentSubject
+from app.dao import *
 from sqlalchemy.exc import SQLAlchemyError
 
 @app.route("/")
@@ -205,37 +205,74 @@ def get_students():
         return jsonify({'error': 'Internal server error'}), 500
 
 
-# API: Lưu điểm cho học sinh
+
+
+
+
+
+
+@app.route('/api/get-scores', methods=['GET'])
+@login_required
+def get_scores():
+    class_id = request.args.get('class_id', type=int)
+    subject_id = request.args.get('subject_id', type=int)
+    semester_id = request.args.get('semester_id', type=int)
+
+    if not all([class_id, subject_id, semester_id]):
+        return jsonify({'error': 'Missing parameters'}), 400
+
+    students = Student.query.filter_by(class_id=class_id).all()
+    score_types = ScoreType.query.all() # Lấy tất cả các loại điểm
+
+    student_data = []
+    for student in students:
+        result = Result.query.filter_by(
+            student_id=student.id, subject_id=subject_id, semester_id=semester_id
+        ).first()
+
+        scores = {}
+        if result:
+            for score_detail in result.score_details:
+                scores[score_detail.score_type.name] = score_detail.value
+
+        student_data.append({
+            'id': student.id,
+            'name': student.user.name,
+            'scores': scores
+        })
+    return jsonify({'students': student_data, 'score_types': [{'id': st.id, 'name': st.name} for st in score_types]})
+
+
 @app.route('/api/save-scores', methods=['POST'])
 @login_required
 def save_scores():
-    try:
-        data = request.json
-        subject_id = data.get('subject_id')
-        class_id = data.get('class_id')
-        scores = data.get('scores')  # [{student_id, score_15_min, score_1_hour, score_exam}]
+    data = request.get_json()
+    class_id = data.get('class_id')
+    subject_id = data.get('subject_id')
+    semester_id = data.get("semester_id")
+    student_scores = data.get('student_scores')
 
-        if not subject_id or not class_id or not scores:
-            return jsonify({'error': 'Invalid data'}), 400
+    for student_score in student_scores:
+        student_id = student_score['id']
+        scores = student_score['scores']
 
-        for score in scores:
-            student_id = score['student_id']
-            score_15_min = score.get('score_15_min')
-            score_1_hour = score.get('score_1_hour')
-            score_exam = score.get('score_exam')
+        result = Result.query.filter_by(student_id=student_id, subject_id=subject_id, semester_id=semester_id).first()
+        if not result:
+            result = Result(student_id=student_id, subject_id=subject_id, semester_id=semester_id)
+            db.session.add(result)
+            db.session.flush() # để lấy id của result vừa tạo
 
-            student_subject = StudentSubject.query.filter_by(
-                student_id=student_id, subject_id=subject_id).first()
-            if student_subject:
-                student_subject.score_15_min = score_15_min
-                student_subject.score_1_hour = score_1_hour
-                student_subject.score_exam = score_exam
+        for score_type_name, value in scores.items():
+            score_type = ScoreType.query.filter_by(name=score_type_name).first()
+            if score_type:
+                score_detail = ScoreDetail.query.filter_by(result_id=result.id, score_type_id=score_type.id).first()
+                if not score_detail:
+                    score_detail = ScoreDetail(result_id=result.id, score_type_id=score_type.id, value=value)
+                    db.session.add(score_detail)
+                else:
+                    score_detail.value = value
 
-        db.session.commit()
-        return jsonify({'message': 'Scores saved successfully'})
-    except SQLAlchemyError as e:
-        print(f"Error saving scores: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
-
+    db.session.commit()
+    return jsonify({'message': 'Scores saved successfully'})
 if __name__ == "__main__":
     app.run(debug=True)
