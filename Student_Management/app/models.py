@@ -36,10 +36,10 @@ class User(db.Model, UserMixin):
     user_role = Column(Enum(UserRole), default=UserRole.STUDENT)
 
     # Relationships
-    students = relationship('Student', backref='user-', lazy=True)
-    teachers = relationship('Teacher', backref='user-', lazy=True)
-    employees = relationship('Employee', backref='user-', lazy=True)
-    admin= relationship('Admin', backref='user-', lazy=True)
+    # students = relationship('Student', backref='user-', lazy=True)
+    # teachers = relationship('Teacher', backref='user-', lazy=True)
+    # employees = relationship('Employee', backref='user-', lazy=True)
+    # admin= relationship('Admin', backref='user-', lazy=True)
 
 # Grade Level Table
 class GradeLevel(db.Model):
@@ -87,7 +87,7 @@ class Teacher(db.Model):
 
     # Relationships
     # user = relationship('User', backref='teacher', uselist=False)
-    subjects = relationship('Subject', secondary='teacher_subject', backref='teachers')  # Nhiều môn học
+    # subjects = relationship('Subject', secondary='teacher_subject', backref='teachers')  # Nhiều môn học
 
 # Employee Table
 class Employee(db.Model):
@@ -125,7 +125,7 @@ class Semester(db.Model):
     
     # Relationships
     results = relationship('Result', backref='semester', lazy=True)
-    subjects = relationship('Subject', secondary='semester_subject', backref='semesters')  # Nhiều môn học
+    # subjects = relationship('Subject', secondary='semester_subject', backref='semesters')  # Nhiều môn học
 
 # Result Table
 class Result(db.Model):
