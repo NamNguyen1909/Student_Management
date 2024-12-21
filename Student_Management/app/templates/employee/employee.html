@@ -17,11 +17,11 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/teacher/editscore">Ghi danh học sinh</a>
+                        <a class="nav-link" href="/employee/register_student">Ghi danh học sinh</a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/teacher/result">Tạo lớp học</a>
+                        <a class="nav-link" href="/employee/create_class">Tạo lớp học</a>
                     </li>
 
                 </ul>
@@ -30,7 +30,7 @@
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item mr-3 ml-3">
-                            <a class="nav-link text-danger" href="/teacher">
+                            <a class="nav-link text-danger" href="/employee">
                                 <img src="{{ current_user.avatar }}" width="30" class="rounded-circle">
                                 <span class="ms-3">{{ current_user.username }}</span>
                             </a>
@@ -100,7 +100,6 @@
                                 <a href="/changepassword" class="btn btn-sm btn-warning">Đổi mật khẩu</a>
                             </li>
 
-
                         </ul>
                     </div>
                 </div>
@@ -142,9 +141,5 @@
             </div>
         </div>
     </div>
-
-
-
-
 
 {% endblock %}

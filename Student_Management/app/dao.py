@@ -1,21 +1,23 @@
 # Student_Management/app/dao.py
 
 import hashlib
-from Student_Management.app import app, db
-from Student_Management.app.models import *
+from app import app, db
+from app.models import *
 import cloudinary.uploader
 from flask_login import current_user
+from datetime import datetime
 
 
-def auth_user(username,password,role=None):
+def auth_user(username, password, role=None):
     password = generate_md5_hash(password)
 
-    u= User.query.filter(User.username.__eq__(username.strip()),
-                             User.password.__eq__(password))
+    u = User.query.filter(User.username.__eq__(username.strip()),
+                          User.password.__eq__(password))
     if role:
-        u=u.filter(User.user_role.__eq__(role))
+        u = u.filter(User.user_role.__eq__(role))
 
     return u.first()
+
 
 def teach(teacher_id, subject_id):
     # Kiểm tra xem mối quan hệ đã tồn tại chưa (giảng viên đã dạy môn học này chưa)
@@ -29,6 +31,82 @@ def teach(teacher_id, subject_id):
         db.session.commit()
         print(f"Đã thêm giảng viên {teacher_id} dạy môn {subject_id}.")
 
+
+# ==========================================================================================================================
+
+def assign_subject_to_class(class_id, subject_id):
+    """
+    Tạo mối quan hệ giữa một lớp học và một môn học.
+
+    Args:
+        class_id (int): ID của lớp học.
+        subject_id (int): ID của môn học.
+
+    Returns:
+        str: Thông báo về trạng thái của mối quan hệ.
+    """
+    # Kiểm tra xem mối quan hệ đã tồn tại chưa
+    existing_relation = ClassSubject.query.filter_by(class_id=class_id, subject_id=subject_id).first()
+    if existing_relation:
+        return f"Lớp {class_id} đã có môn {subject_id}."
+    else:
+        # Tạo mối quan hệ mới giữa lớp học và môn học
+        new_relation = ClassSubject(class_id=class_id, subject_id=subject_id)
+        db.session.add(new_relation)
+        db.session.commit()
+        print(f"Đã thêm môn {subject_id} vào lớp {class_id}.")
+
+
+def enroll_student_to_subject(student_id, subject_id):
+    # Kiểm tra xem mối quan hệ đã tồn tại chưa (sinh viên đã đăng ký môn học này chưa)
+    existing_relation = StudentSubject.query.filter_by(student_id=student_id, subject_id=subject_id).first()
+    if existing_relation:
+        print(f"Sinh viên {student_id} đã đăng ký môn {subject_id} rồi.")
+    else:
+        # Tạo mối quan hệ mới giữa sinh viên và môn học
+        new_relation = StudentSubject(student_id=student_id, subject_id=subject_id)
+        db.session.add(new_relation)
+        db.session.commit()
+        print(f"Đã thêm sinh viên {student_id} vào môn {subject_id}.")
+
+
+def assign_subject_to_semester(semester_id, subject_id):
+    # Kiểm tra xem mối quan hệ đã tồn tại chưa (môn học đã thuộc về học kỳ này chưa)
+    existing_relation = SemesterSubject.query.filter_by(semester_id=semester_id, subject_id=subject_id).first()
+    if existing_relation:
+        print(f"Môn học {subject_id} đã được thêm vào học kỳ {semester_id} rồi.")
+    else:
+        # Tạo mối quan hệ mới giữa học kỳ và môn học
+        new_relation = SemesterSubject(semester_id=semester_id, subject_id=subject_id)
+        db.session.add(new_relation)
+        db.session.commit()
+        print(f"Đã thêm môn {subject_id} vào học kỳ {semester_id}.")
+
+
+def create_student_record(user_id, class_id):
+    """
+    Hàm tạo Student record từ User và Class ID.
+    Tự động lấy GradeLevelId từ Class ID và tăng si_so của lớp.
+    """
+    # Lấy Class object từ class_id
+    class_object = Class.query.get(class_id)
+
+    if not class_object:
+        raise ValueError("Class ID không tồn tại")
+
+    # Lấy GradeLevelId từ Class
+    grade_level_id = class_object.grade_level_id
+
+    # Tạo Student record
+    student_record = Student(user_id=user_id, class_id=class_id, grade_level_id=grade_level_id)
+    db.session.add(student_record)
+
+    # Tăng si_so của Class
+    class_object.si_so += 1
+    db.session.add(class_object)
+
+    # Commit cả hai thay đổi
+    db.session.commit()
 
 
 # =================================================================================================================
@@ -51,7 +129,6 @@ def generate_md5_hash(password):
 # =================================================================================================================
 
 def generate_username(role_prefix, user_role):
-
     """
     Hàm tạo username dạng 'ST000001', 'TC000001' dựa trên role_prefix và user_role.
     """
@@ -69,8 +146,8 @@ def generate_username(role_prefix, user_role):
     number_length = 10 - len(role_prefix) - len(str(new_id))
     return f"{role_prefix}{str(new_id).zfill(number_length)}"
 
-def create_fake_data():
 
+def create_fake_data():
     # 1. Tạo Admins
     admins = [
         {
@@ -148,18 +225,16 @@ def create_fake_data():
     grade_level_objects = []
     for name in grade_levels:
         grade = GradeLevel(name=name)
-
         db.session.add(grade)
         db.session.commit()
-
         grade_level_objects.append(grade)
+
     # 4. Tạo Classes
     classes = [
         {"name": "10A1", "grade_level": grade_level_objects[0]},
         {"name": "11B2", "grade_level": grade_level_objects[1]},
         {"name": "12C3", "grade_level": grade_level_objects[2]},
     ]
-
     class_objects = []
     for cls in classes:
         class_item = Class(name=cls["name"], grade_level_id=cls["grade_level"].id)
@@ -175,8 +250,7 @@ def create_fake_data():
             "address": "Hà Nội",
             "phone": "0912345670",
             "email": "lan.nguyen@example.com",
-            "class": class_objects[0],
-            "grade_level": grade_level_objects[0]
+            "class_id": class_objects[0].id,
         },
         {
             "name": "Trần Minh Quân",
@@ -184,8 +258,7 @@ def create_fake_data():
             "address": "TP Hồ Chí Minh",
             "phone": "0912345671",
             "email": "quan.tran@example.com",
-            "class": class_objects[1],
-            "grade_level": grade_level_objects[1]
+            "class_id": class_objects[1].id,
         },
         {
             "name": "Lê Thị Mai",
@@ -193,12 +266,13 @@ def create_fake_data():
             "address": "Đà Nẵng",
             "phone": "0912345672",
             "email": "mai.le@example.com",
-            "class": class_objects[2],
-            "grade_level": grade_level_objects[2]
+            "class_id": class_objects[2].id,
         },
     ]
-    for stu in students:
 
+    # Duyệt qua từng student và tạo record
+    for stu in students:
+        # Tạo User
         user = User(
             username=generate_username("ST", UserRole.STUDENT),
             password=generate_md5_hash("123456"),
@@ -210,32 +284,32 @@ def create_fake_data():
             email=stu["email"],
             user_role=UserRole.STUDENT,
         )
-
         db.session.add(user)
         db.session.commit()
 
-        student_record = Student(
-            user_id=user.id,
-            class_id=stu["class"].id,
-            name=stu["name"],
-            address=stu["address"],
-            phone=stu["phone"],
-            email=stu["email"],
-            sex=stu.get("sex", True),
-            dob=stu["dob"],
-            grade_level=stu["grade_level"],
-        )
-        db.session.add(student_record)
-        db.session.commit()
+        # Tạo Student record
+        create_student_record(user.id, stu["class_id"])
 
     # 6. Tạo Subjects
-    subjects = ["Toán", "Ngữ văn", "Vật lý","Sinh học","Nhạc","Mĩ thuật","Tiếng anh","Tiếng pháp","GDCD"]
+    subjects = ["Toán", "Ngữ văn", "Vật lý", "Sinh học", "Nhạc", "Mĩ thuật", "Tiếng anh", "Tiếng pháp", "GDCD"]
     subject_objects = []
     for name in subjects:
         subject = Subject(name=name)
         db.session.add(subject)
         db.session.commit()
         subject_objects.append(subject)
+    # Gán môn học vào các lớp
+    for class_item in class_objects:
+        for subject in subject_objects:
+            assign_subject_to_class(class_item.id, subject.id)
+    db.session.commit()
+
+    # Gán sinh viên vào môn học
+    student_objects = Student.query.all()  # Lấy tất cả sinh viên đã tạo
+    for student in student_objects:
+        for subject in subject_objects[:5]:  # Gán mỗi sinh viên học 5 môn đầu tiên (ví dụ)
+            enroll_student_to_subject(student.id, subject.id)
+    db.session.commit()
 
     # 7. Tạo Teachers
     teachers = [
@@ -292,6 +366,13 @@ def create_fake_data():
         db.session.add(semester)  # Thêm vào phiên giao dịch
         db.session.commit()  # Lưu tất cả thay đổi
 
+    # Gán môn học vào học kỳ
+    semester_objects = Semester.query.all()  # Lấy tất cả học kỳ đã tạo
+    for semester in semester_objects:
+        for subject in subject_objects:
+            assign_subject_to_semester(semester.id, subject.id)
+    db.session.commit()
+
     # 6. Tạo Regulations
     regulations = [
         {"name": "Độ tuổi tối thiểu", "value": 15, "note": "Học sinh phải từ 15 tuổi trở lên"},
@@ -309,13 +390,46 @@ def create_fake_data():
         db.session.commit()  # Commit sau khi thêm tất cả các quy định
     print("Dữ liệu giả đã được tạo thành công!")
 
-def get_user_by_id(id):
-    return User.query.get(id)
+    # 7. Tạo ScoreType
+    score_types = [
+        {"name": "Điểm 15 phút", "weight": 1},
+        {"name": "Điểm 45 phút", "weight": 2},
+        {"name": "Điểm thi", "weight": 3},
+    ]
+
+    for st in score_types:
+        # Kiểm tra nếu ScoreType chưa tồn tại để tránh trùng lặp
+        existing_score_type = ScoreType.query.filter_by(name=st["name"]).first()
+        if not existing_score_type:
+            score_type = ScoreType(name=st["name"], weight=st["weight"])
+            db.session.add(score_type)
+
+    db.session.commit()
+
 
 def employee_classes():
-    # Lấy danh sách lớp học từ cơ sở dữ liệu
+    # Lấy danh sách lớp học từ database
     classes = Class.query.all()
     return classes
+
+# Check quy định
+def check_regulation_for_student(dob: datetime) -> bool:
+    # Lấy quy định độ tuổi từ bảng Regulation
+    age_regulation = db.session.query(Regulation).filter(Regulation.name == "Độ tuổi tối thiểu").first()
+
+    if age_regulation:
+        min_age = age_regulation.value
+        max_age = min_age + 5
+        age = (datetime.now() - dob).days // 365
+
+        if min_age <= age <= max_age:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
 
 if __name__ == '__main__':
     with app.app_context():

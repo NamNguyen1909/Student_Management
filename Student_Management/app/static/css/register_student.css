@@ -1,0 +1,17 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.form-container {
+    max-width: 600px;
+    margin: 50px auto;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-group label {
+    font-weight: 600;
+}

@@ -13,23 +13,26 @@
             crossorigin="anonymous"></script>
 
 
-    <link rel="stylesheet" href="{{url_for('static',filename='css/style.css')}}"/>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}"/>
 
 
 </head>
 <body>
 
 
-
 <main class="container">
-   {%block content required%}
+    {% block content %}
 
-    {%endblock%}
+    {% endblock %}
 </main>
 
 
+{#{% block footer %}#}
+{#    {% include 'layout/footer.html' %}#}
+{#{% endblock %}#}
 
-<script src="{{url_for('static', filename='js/script.js')}}"></script>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 
 </body>
 </html>
