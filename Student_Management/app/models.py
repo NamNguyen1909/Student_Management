@@ -74,7 +74,7 @@ class Student(db.Model):
     class_id = Column(Integer, ForeignKey(Class.id), nullable=False)  # Khóa ngoại trỏ đến Class
 
     # Relationships
-    # user = relationship('User', backref='student', uselist=False)
+    user = relationship('User', backref='student', uselist=False)
     results = relationship('Result', backref='student', lazy=True)
     # class_ = relationship('Class', backref='student_relationship')  # Mối quan hệ với Class
 
