@@ -149,45 +149,63 @@
 
             // Load students and scores
 loadScoresButton.addEventListener("click", function () {
-    const subject = subjectDropdown.options[subjectDropdown.selectedIndex].text;
+    const subjectId = subjectDropdown.value;
+    const classId = classDropdown.value;
+    const semesterId = semesterDropdown.value;
+
+    const subjectName = subjectDropdown.options[subjectDropdown.selectedIndex].text;
     const className = classDropdown.options[classDropdown.selectedIndex].text;
-    const semester = semesterDropdown.options[semesterDropdown.selectedIndex].text;
+    const semesterName = semesterDropdown.options[semesterDropdown.selectedIndex].text;
 
     document.getElementById("selected-class").textContent = className;
-    document.getElementById("selected-subject").textContent = subject;
-    document.getElementById("selected-semester").textContent = semester;
+    document.getElementById("selected-subject").textContent = subjectName;
+    document.getElementById("selected-semester").textContent = semesterName;
 
     detailsDisplay.style.display = "block";
 
-    // Gọi API lấy danh sách học sinh
-    fetch(`/api/get-students?class_id=${classDropdown.value}&subject_id=${subjectDropdown.value}`)
+    fetch(`/api/get-students?class_id=${classId}&subject_id=${subjectId}`)
         .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
+        .then(students => {
+            if (!students || students.length === 0) {
+                alert("Không có học sinh nào trong lớp này.");
                 return;
             }
 
             const tbody = studentsTable.querySelector("tbody");
-            tbody.innerHTML = ""; // Xóa dữ liệu cũ nếu có
+            tbody.innerHTML = ""; // Clear old data
 
-            // Hiển thị danh sách học sinh
-            data.forEach((student, index) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${student.name}</td>
-                    <td><input type="number" class="form-control" min="0" max="10" data-student-id="${student.id}" data-type="score_15_min"></td>
-                    <td><input type="number" class="form-control" min="0" max="10" data-student-id="${student.id}" data-type="score_1_hour"></td>
-                    <td><input type="number" class="form-control" min="0" max="10" data-student-id="${student.id}" data-type="score_exam"></td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm" data-student-id="${student.id}">Xóa</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
+            students.forEach((student, index) => {
+                fetch(`/api/check-or-create-result`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        student_id: student.id,
+                        subject_id: subjectId,
+                        semester_id: semesterId,
+                    }),
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${student.name}</td>
+                            <td><input type="number" class="form-control" min="0" max="10" data-result-id="${result.id}" data-score-type-id="1" value="${result.score_details[0]?.value || 0}"></td>
+                            <td><input type="number" class="form-control" min="0" max="10" data-result-id="${result.id}" data-score-type-id="2" value="${result.score_details[1]?.value || 0}"></td>
+                            <td><input type="number" class="form-control" min="0" max="10" data-result-id="${result.id}" data-score-type-id="3" value="${result.score_details[2]?.value || 0}"></td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" data-student-id="${student.id}">Xóa</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    })
+                    .catch(error => {
+                        console.error("Error checking/creating result:", error);
+                    });
             });
 
-            // Hiển thị bảng và nút lưu điểm
             studentsTable.style.display = "table";
             saveScoresButton.style.display = "block";
         })
@@ -195,6 +213,7 @@ loadScoresButton.addEventListener("click", function () {
             console.error("Error fetching students:", error);
         });
 });
+
 
 semesterDropdown.addEventListener("change", function () {
     const semesterId = this.value;
@@ -214,80 +233,47 @@ semesterDropdown.addEventListener("change", function () {
             console.error("Error fetching semester year:", error);
         });
 });
+document.getElementById("save-scores").addEventListener("click", function () {
+    const rows = document.querySelectorAll("#students-table tbody tr");
+    const scoresData = [];
 
-loadScoresButton.addEventListener("click", function () {
-    // ... (lấy thông tin môn học, lớp, học kỳ)
-    fetch(`/api/get-scores?class_id=${classDropdown.value}&subject_id=${subjectDropdown.value}&semester_id=${semesterDropdown.value}`)
-        .then(res => res.json())
-        .then(data => {
-            const tbody = studentsTable.querySelector("tbody");
-            tbody.innerHTML = "";
-            const scoreTypes = data.score_types;
+    rows.forEach(row => {
+        const resultId = row.querySelector("input[data-result-id]").dataset.resultId;
 
-            // Tạo header bảng dựa trên scoreTypes
-            const theadRow = studentsTable.querySelector("thead tr");
-            theadRow.innerHTML = "<th>STT</th><th>Họ Tên</th>";
-            scoreTypes.forEach(st => {
-                const th = document.createElement("th");
-                th.textContent = st.name;
-                theadRow.appendChild(th);
-            });
-            theadRow.appendChild(document.createElement("th")).textContent = "Thao tác";
-
-            data.students.forEach((student, index) => {
-                const row = tbody.insertRow();
-                row.insertCell().textContent = index + 1;
-                row.insertCell().textContent = student.name;
-
-                scoreTypes.forEach(st => {
-                    const cell = row.insertCell();
-                    const input = document.createElement("input");
-                    input.type = "number";
-                    input.classList.add("form-control");
-                    input.min = "0";
-                    input.max = "10";
-                    input.value = student.scores[st.name] || ""; // Hiển thị điểm nếu có
-                    input.dataset.studentId = student.id;
-                    input.dataset.scoreType = st.name;
-                    cell.appendChild(input);
-                });
-                row.insertCell().innerHTML = `<button type="button" class="btn btn-danger btn-sm" data-student-id="${student.id}">Xóa</button>`;
-
-            });
-            studentsTable.style.display = "table";
-            saveScoresButton.style.display = "block";
+        const scores = Array.from(row.querySelectorAll("input")).map(input => {
+            return {
+                score_type_id: parseInt(input.dataset.scoreTypeId),
+                value: parseFloat(input.value) || 0
+            };
         });
-});
 
-saveScoresButton.addEventListener('click', () => {
-    const studentRows = document.querySelectorAll('#students-table tbody tr');
-    const studentScores = [];
-
-    studentRows.forEach(row => {
-        const studentId = row.querySelector('input[data-student-id]').dataset.studentId;
-        const scoreInputs = row.querySelectorAll('input[data-score-type]');
-        const scores = {};
-        scoreInputs.forEach(input => {
-            scores[input.dataset.scoreType] = parseFloat(input.value) || null;
+        scoresData.push({
+            result_id: parseInt(resultId),
+            scores: scores
         });
-        studentScores.push({ id: parseInt(studentId), scores });
     });
-
-    const data = {
-        class_id: parseInt(classDropdown.value),
-        subject_id: parseInt(subjectDropdown.value),
-        semester_id: parseInt(semesterDropdown.value),
-        student_scores: studentScores
-    };
 
     fetch('/api/save-scores', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(res => res.json()).then(data => {
-        alert(data.message);
-    });
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(scoresData)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+            } else {
+                alert('Scores saved successfully!');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving scores:', error);
+        });
 });
+
+
         });
     </script>
 </body>

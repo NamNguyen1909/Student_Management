@@ -37,7 +37,7 @@ class User(db.Model, UserMixin):
 
     # Relationships
     # students = relationship('Student', backref='user-', lazy=True)
-    # teachers = relationship('Teacher', backref='user-', lazy=True)
+    teachers = relationship('Teacher', backref='user-', lazy=True)
     # employees = relationship('Employee', backref='user-', lazy=True)
     # admin= relationship('Admin', backref='user-', lazy=True)
 
@@ -86,8 +86,8 @@ class Teacher(db.Model):
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
 
     # Relationships
-    # user = relationship('User', backref='teacher', uselist=False)
-    # subjects = relationship('Subject', secondary='teacher_subject', backref='teachers')  # Nhiều môn học
+    user = relationship('User', backref='teacher')
+    subjects = relationship('Subject', secondary='teacher_subject', backref='teachers')  # Nhiều môn học
 
 # Employee Table
 class Employee(db.Model):
@@ -152,7 +152,7 @@ class ScoreType(db.Model):
 class ScoreDetail(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     result_id = Column(Integer, ForeignKey(Result.id), nullable=False)
-    value = Column(Float, nullable=False)
+    value = Column(Float, nullable=True,default=0)
     score_type_id = Column(Integer, ForeignKey(ScoreType.id), nullable=False)
 
 

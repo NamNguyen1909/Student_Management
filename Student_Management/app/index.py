@@ -204,6 +204,114 @@ def get_students():
         print(f"Error fetching students: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/api/check-or-create-result', methods=['POST'])
+@login_required
+def check_or_create_result():
+    try:
+        data = request.get_json()
+        student_id = data.get('student_id')
+        subject_id = data.get('subject_id')
+        semester_id = data.get('semester_id')
+
+        if not student_id or not subject_id or not semester_id:
+            return jsonify({'error': 'Missing student_id, subject_id, or semester_id'}), 400
+
+        # Kiểm tra xem Result đã tồn tại chưa
+        result = Result.query.filter_by(
+            student_id=student_id,
+            subject_id=subject_id,
+            semester_id=semester_id
+        ).first()
+
+        if not result:
+            # Nếu chưa tồn tại, tạo mới Result
+            result = Result(
+                student_id=student_id,
+                subject_id=subject_id,
+                semester_id=semester_id
+            )
+            db.session.add(result)
+            db.session.commit()
+
+            # Tạo 3 ScoreDetail mặc định
+            score_types = [1, 2, 3]  # 1: 15 phút, 2: 45 phút, 3: điểm thi
+            for score_type_id in score_types:
+                score_detail = ScoreDetail(
+                    result_id=result.id,
+                    score_type_id=score_type_id,
+                    value=0  # Điểm mặc định
+                )
+                db.session.add(score_detail)
+
+            db.session.commit()
+
+        # Lấy thông tin ScoreDetail
+        score_details = ScoreDetail.query.filter_by(result_id=result.id).all()
+        score_details_list = [
+            {
+                'id': sd.id,
+                'score_type_id': sd.score_type_id,
+                'value': sd.value
+            } for sd in score_details
+        ]
+
+        return jsonify({
+            'id': result.id,
+            'score_details': score_details_list
+        })
+
+    except SQLAlchemyError as e:
+        print(f"Error checking/creating result: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/save-scores', methods=['POST'])
+@login_required
+def save_scores():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        for item in data:
+            result_id = item.get('result_id')
+            scores = item.get('scores')
+
+            if not result_id or not scores:
+                return jsonify({'error': 'Missing required fields'}), 400
+
+            for score in scores:
+                score_type_id = score.get('score_type_id')
+                value = score.get('value')
+
+                if score_type_id is None or value is None:
+                    continue
+
+                score_detail = ScoreDetail.query.filter_by(
+                    result_id=result_id,
+                    score_type_id=score_type_id
+                ).first()
+
+                if not score_detail:
+                    score_detail = ScoreDetail(
+                        result_id=result_id,
+                        score_type_id=score_type_id,
+                        value=value
+                    )
+                    db.session.add(score_detail)
+                else:
+                    score_detail.value = value
+
+        db.session.commit()
+        return jsonify({'message': 'Scores saved successfully'}), 200
+
+    except SQLAlchemyError as e:
+        print(f"Error saving scores: {e}")
+        db.session.rollback()
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+
 
 
 
