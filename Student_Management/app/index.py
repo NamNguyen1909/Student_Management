@@ -265,21 +265,82 @@ def check_or_create_result():
         return jsonify({'error': 'Internal server error'}), 500
 
 
+# @app.route('/api/save-scores', methods=['POST'])
+# @login_required
+# def save_scores():
+#     try:
+#         data = request.get_json()
+#         if not data:
+#             return jsonify({'error': 'No data provided'}), 400
+#
+#         for item in data:
+#             result_id = item.get('result_id')
+#             scores = item.get('scores')
+#
+#             if not result_id or not scores:
+#                 return jsonify({'error': 'Missing required fields'}), 400
+#
+#             for score in scores:
+#                 score_type_id = score.get('score_type_id')
+#                 value = score.get('value')
+#
+#                 if score_type_id is None or value is None:
+#                     continue
+#
+#                 score_detail = ScoreDetail.query.filter_by(
+#                     result_id=result_id,
+#                     score_type_id=score_type_id
+#                 ).first()
+#
+#                 if not score_detail:
+#                     score_detail = ScoreDetail(
+#                         result_id=result_id,
+#                         score_type_id=score_type_id,
+#                         value=value
+#                     )
+#                     db.session.add(score_detail)
+#                 else:
+#                     score_detail.value = value
+#
+#         db.session.commit()
+#         return jsonify({'message': 'Scores saved successfully'}), 200
+#
+#     except SQLAlchemyError as e:
+#         print(f"Error saving scores: {e}")
+#         db.session.rollback()
+#         return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/api/save-scores', methods=['POST'])
 @login_required
 def save_scores():
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+        if not data or not isinstance(data, list):
+            return jsonify({'error': 'Invalid input format'}), 400
 
         for item in data:
-            result_id = item.get('result_id')
+            student_id = item.get('student_id')
+            subject_id = item.get('subject_id')
+            semester_id = item.get('semester_id')
             scores = item.get('scores')
 
-            if not result_id or not scores:
+            if not student_id or not subject_id or not semester_id or not scores:
+                print(data)
+
+
                 return jsonify({'error': 'Missing required fields'}), 400
 
+            # Kiểm tra hoặc tạo Result
+            result = Result.query.filter_by(
+                student_id=student_id,
+                subject_id=subject_id,
+                semester_id=semester_id
+            ).first()
+
+            if not result:
+                return jsonify({'error': 'Result not found'}), 404
+
+            # Xử lý từng điểm
             for score in scores:
                 score_type_id = score.get('score_type_id')
                 value = score.get('value')
@@ -288,13 +349,13 @@ def save_scores():
                     continue
 
                 score_detail = ScoreDetail.query.filter_by(
-                    result_id=result_id,
+                    result_id=result.id,
                     score_type_id=score_type_id
                 ).first()
 
                 if not score_detail:
                     score_detail = ScoreDetail(
-                        result_id=result_id,
+                        result_id=result.id,
                         score_type_id=score_type_id,
                         value=value
                     )
