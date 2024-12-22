@@ -4,6 +4,13 @@ from flask_login import login_user, logout_user, login_required
 from app.dao import *
 from sqlalchemy.exc import SQLAlchemyError
 
+import unicodedata
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib import colors
+from io import BytesIO
+from flask import Flask, send_file
+
 @app.route("/")
 def index():
     return render_template('index.html')
@@ -343,7 +350,8 @@ def view_score():
             for semester_id in semester_ids:
                 results = Result.query.filter_by(student_id=student.id, semester_id=semester_id).all()
                 if results:
-                    averages[semester_id] = sum([r.average for r in results if r.average]) / len(results)
+                    avg = sum([r.average for r in results if r.average]) / len(results)
+                    averages[semester_id] = f"{avg:.2f}"  # Định dạng điểm dạng x.xx
                 else:
                     averages[semester_id] = None
 
@@ -353,10 +361,115 @@ def view_score():
                 'averages': averages
             })
 
-        return render_template('/teacher/view_score.html', results=results_data, year=year, semester_ids=semester_ids, classes=Class.query.all(), years=Semester.query.with_entities(Semester.year).distinct().all())
+        return render_template(
+            '/teacher/view_score.html',
+            results=results_data,
+            year=year,
+            semester_ids=semester_ids,
+            classes=Class.query.all(),
+            years=Semester.query.with_entities(Semester.year).distinct().all(),
+            selected_class_id=class_id,
+            selected_year=year
+        )
 
     # GET request: Hiển thị form chọn lớp và năm học
-    return render_template('/teacher/view_score.html', classes=Class.query.all(), years=Semester.query.with_entities(Semester.year).distinct().all())
+    return render_template(
+        '/teacher/view_score.html',
+        classes=Class.query.all(),
+        years=Semester.query.with_entities(Semester.year).distinct().all(),
+        selected_class_id=None,
+        selected_year=None
+    )
+
+
+# Hàm chuyển đổi tiếng Việt thành ASCII (không dấu)
+def remove_vietnamese_accents(text):
+    nfkd = unicodedata.normalize('NFKD', text)
+    return ''.join([c for c in nfkd if not unicodedata.combining(c)])
+
+@app.route('/download_score_pdf')
+def download_score_pdf():
+    # Lấy thông tin từ query string
+    class_id = request.args.get('class_id')
+    year = request.args.get('year')
+
+    if not class_id or not year:
+        return "Thiếu thông tin lớp hoặc năm học", 400
+
+    # Lấy danh sách học kỳ
+    semesters = Semester.query.filter_by(year=year).all()
+    semester_ids = [s.id for s in semesters]
+
+    # Lấy danh sách học sinh của lớp
+    students = Student.query.filter_by(class_id=class_id).all()
+
+    # Tính điểm trung bình
+    results_data = []
+    for student in students:
+        user = User.query.get(student.user_id)  # Thông tin User
+        averages = {}
+        for semester_id in semester_ids:
+            results = Result.query.filter_by(student_id=student.id, semester_id=semester_id).all()
+            if results:
+                averages[semester_id] = sum([r.average for r in results if r.average]) / len(results)
+            else:
+                averages[semester_id] = None
+
+        results_data.append({
+            'name': user.name,
+            'averages': averages
+        })
+
+    # Lấy thông tin lớp
+    class_name = Class.query.get(class_id).name
+
+    # Tạo file PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    # Tiêu đề
+    elements = []
+    title = [["BANG DIEM LOP " + remove_vietnamese_accents(class_name), f"NAM HOC: {year}"]]
+    title_table = Table(title)
+    title_table.setStyle(TableStyle([
+        ('SPAN', (0, 0), (-1, 0)),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+    ]))
+    elements.append(title_table)
+
+    # Dữ liệu bảng
+    data = [["STT", "Ho ten"] + [f"Diem TB HK{sem}" for sem in range(1, len(semester_ids) + 1)]]
+    for idx, result in enumerate(results_data, start=1):
+        row = [idx, remove_vietnamese_accents(result['name'])]
+        for semester_id in semester_ids:
+            avg = result['averages'].get(semester_id, "Khong co")
+            row.append(f"{avg:.2f}" if isinstance(avg, (int, float)) else avg)
+        data.append(row)
+
+    # Tạo bảng
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+    ]))
+
+    elements.append(table)
+
+    # Lưu PDF
+    doc.build(elements)
+    buffer.seek(0)
+
+    # Trả file PDF về client
+    return send_file(buffer, as_attachment=True, download_name=f"bang_diem_{remove_vietnamese_accents(class_name)}_{year}.pdf", mimetype='application/pdf')
+
 
 # =============================================================================
 

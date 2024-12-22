@@ -60,18 +60,22 @@
             <div class="mb-3">
                 <label for="class_id" class="form-label">Chọn lớp:</label>
                 <select class="form-select" id="class_id" name="class_id" required>
-                    <option value="" disabled selected>-- Chọn lớp --</option>
+                    <option value="" disabled {% if not request.form.get('class_id') %}selected{% endif %}>-- Chọn lớp --</option>
                     {% for class in classes %}
-                        <option value="{{ class.id }}">{{ class.name }}</option>
+                        <option value="{{ class.id }}" {% if class.id == request.form.get('class_id')|int %}selected{% endif %}>
+                            {{ class.name }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="mb-3">
                 <label for="year" class="form-label">Chọn năm học:</label>
                 <select class="form-select" id="year" name="year" required>
-                    <option value="" disabled selected>-- Chọn năm học --</option>
+                    <option value="" disabled {% if not request.form.get('year') %}selected{% endif %}>-- Chọn năm học --</option>
                     {% for year in years %}
-                        <option value="{{ year[0] }}">{{ year[0] }}</option>
+                        <option value="{{ year[0] }}" {% if year[0] == request.form.get('year') %}selected{% endif %}>
+                            {{ year[0] }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -99,7 +103,7 @@
                         <td>{{ result.name }}</td>
                         <td>{{ result.class_name }}</td>
                         {% for semester_id in semester_ids %}
-                            <td>{{ result.averages[semester_id] or 'Không có' }}</td>
+                            <td>{{ result.averages[semester_id] or 'x' }}</td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
@@ -109,5 +113,9 @@
 
         <a href="/" class="btn btn-secondary mt-3">Quay lại</a>
     </div>
+    {% if results %}
+        <a href="{{ url_for('download_score_pdf', class_id=request.form['class_id'], year=request.form['year']) }}"
+           class="btn btn-success mt-3">In bảng điểm (PDF)</a>
+    {% endif %}
 </body>
 </html>
