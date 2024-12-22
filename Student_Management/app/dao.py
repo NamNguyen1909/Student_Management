@@ -216,6 +216,34 @@ def generate_username(role_prefix, user_role):
     number_length = 10 - len(role_prefix) - len(str(new_id))
     return f"{role_prefix}{str(new_id).zfill(number_length)}"
 
+
+# =================================================================================================================
+
+def employee_classes():
+    # Lấy danh sách lớp học từ database
+    classes = Class.query.all()
+    return classes
+
+# Check quy định
+def check_regulation_for_student(dob: datetime) -> bool:
+    # Lấy quy định độ tuổi từ bảng Regulation
+    age_regulation = db.session.query(Regulation).filter(Regulation.name == "Độ tuổi tối thiểu").first()
+
+    if age_regulation:
+        min_age = age_regulation.value
+        max_age = min_age + 5
+        age = (datetime.now() - dob).days // 365
+
+        if min_age <= age <= max_age:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+# =================================================================================================================
+
+
 def create_fake_data():
 
     # 1. Tạo Admins

@@ -1,0 +1,94 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg border-0 rounded">
+                    <div class="card-body p-5">
+                        <h2 class="text-center mb-4 fs-3 fw-bold text-primary">Trang Tiếp Nhận Học Sinh</h2>
+
+                        <!-- Thông báo thành công nằm ở góc trên bên phải -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show position-fixed" role="alert" id="flash-message" style="top: 10px; right: 10px; z-index: 1050;">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" action="{{ url_for('register_student') }}" enctype="multipart/form-data">
+                            <!-- Các trường form -->
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="full_name" name="full_name" required placeholder="Họ và Tên">
+                                <label for="full_name">Họ và Tên</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control" id="dob" name="dob" required placeholder="Ngày Sinh">
+                                <label for="dob">Ngày Sinh</label>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="gender" class="form-label">Giới Tính</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" id="male" name="gender" value="male" checked class="form-check-input">
+                                    <label for="male" class="form-check-label">Nam</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" id="female" name="gender" value="female" class="form-check-input">
+                                    <label for="female" class="form-check-label">Nữ</label>
+                                </div>
+                            </div>
+
+                            <!-- Các trường nhập liệu khác -->
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="address" name="address" required placeholder="Địa Chỉ">
+                                <label for="address">Địa Chỉ</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="phone" name="phone" required placeholder="Số Điện Thoại">
+                                <label for="phone">Số Điện Thoại</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="email" name="email" required placeholder="Email">
+                                <label for="email">Email</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control" id="class_id" name="class_id" required placeholder="Lớp Học">
+                                <label for="class_id">Lớp Học</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="password" class="form-control" id="password" name="password" required placeholder="Mật Khẩu">
+                                <label for="password">Mật Khẩu</label>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">Đăng Ký</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thêm script JavaScript để ẩn thông báo sau 2 giây -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Kiểm tra nếu có thông báo
+            var flashMessage = document.getElementById("flash-message");
+            if (flashMessage) {
+                // Ẩn thông báo sau 2 giây
+                setTimeout(function() {
+                    flashMessage.classList.remove("show");
+                    flashMessage.classList.add("fade");
+                }, 2000);
+            }
+        });
+    </script>
+
+{% endblock %}
