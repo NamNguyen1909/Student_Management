@@ -372,6 +372,109 @@ def save_scores():
         return jsonify({'error': 'Internal server error'}), 500
 
 
+# =============================================================================
+
+# @app.route('/employee/register_student')
+# @login_required
+# def register_student():
+#     return render_template('/employee/register_student.html')
+
+@app.route('/employee/create_class')
+@login_required
+def create_class():
+    return render_template('/employee/create_class.html')
+
+
+# @app.route('/register_student', methods=['GET', 'POST'])
+# def register_student():
+#     err_msg = ''
+#     if request.method == 'POST':
+#         username = request.form.get('username')
+#         full_name = request.form.get('full_name')
+#         dob = request.form.get('dob')
+#         gender = request.form.get('gender')
+#         address = request.form.get('address')
+#         phone = request.form.get('phone')
+#         email = request.form.get('email')
+#         class_id = request.form.get('class_id')
+#         password = request.form.get('password')
+#
+#         dob = datetime.strptime(dob, '%Y-%m-%d')
+#
+#         if not check_regulation_for_student(dob):
+#             err_msg = 'Độ tuổi không hợp lệ. Học sinh phải từ 15 đến 20 tuổi.'
+#         else:
+#             # Thêm người dùng vào bảng User
+#             user = User(
+#                 username=username,
+#                 password=password,
+#                 name=full_name,
+#                 dob=dob,
+#                 sex=True if gender == 'male' else False,
+#                 address=address,
+#                 phone=phone,
+#                 email=email
+#             )
+#             db.session.add(user)
+#             db.session.commit()
+#
+#             # Thêm học sinh vào bảng Student
+#             try:
+#                 create_student_record(user.id, class_id)
+#                 flash("Học sinh đã được thêm thành công!", "success")
+#                 return redirect(url_for('register_student'))  # Redirect to the same page or any other page
+#             except ValueError as e:
+#                 err_msg = str(e)
+#
+#     return render_template('employee/register_student.html', err_msg=err_msg)
+
+
+@app.route('/employee/register_student', methods=['GET', 'POST'])
+@login_required
+def register_student():
+    err_msg = ''
+    if request.method == 'POST':
+        # Lấy thông tin từ form
+        full_name = request.form.get('full_name')
+        dob = request.form.get('dob')
+        gender = request.form.get('gender')
+        address = request.form.get('address')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+        class_id = request.form.get('class_id')
+        password = request.form.get('password')
+
+        # Chuyển đổi dob thành datetime
+        dob = datetime.strptime(dob, '%Y-%m-%d')
+
+        # Kiểm tra độ tuổi hợp lệ
+        if not check_regulation_for_student(dob):
+            err_msg = 'Độ tuổi không hợp lệ. Học sinh phải từ 15 đến 20 tuổi.'
+        else:
+            # Thêm người dùng vào bảng User
+            user = User(
+                username=generate_username("ST", UserRole.STUDENT),
+                password=generate_md5_hash(password),
+                name=full_name,
+                dob=dob,
+                sex=True if gender == 'male' else False,
+                address=address,
+                phone=phone,
+                email=email
+            )
+            db.session.add(user)
+            db.session.commit()
+
+            # Thêm học sinh vào bảng Student
+            try:
+                create_student_record(user.id, class_id)
+                flash("Học sinh đã được thêm thành công!", "success")
+                return redirect(url_for('register_student'))  # Redirect to the same page or any other page
+            except ValueError as e:
+                err_msg = str(e)
+
+    return render_template('employee/register_student.html', err_msg=err_msg)
+
 
 
 
