@@ -3,6 +3,7 @@
 import hashlib
 from app import app, db
 from app.models import *
+from sqlalchemy.orm import joinedload
 
 
 def auth_user(username,password,role=None):
@@ -26,6 +27,35 @@ def teach(teacher_id, subject_id):
         db.session.add(new_relation)
         db.session.commit()
         print(f"Đã thêm giảng viên {teacher_id} dạy môn {subject_id}.")
+
+def calculate_average(result_id):
+    # Lấy Result từ database
+    result = Result.query.options(
+        joinedload(Result.score_details).joinedload(ScoreDetail.score_type)
+    ).filter_by(id=result_id).first()
+
+    if not result:
+        return {"error": "Result not found."}, 404
+
+    # Tính toán điểm trung bình
+    total_weighted_score = 0
+    total_weight = 0
+
+    for score_detail in result.score_details:
+        if score_detail.value is not None:
+            weight = score_detail.score_type.weight
+            total_weighted_score += score_detail.value * weight
+            total_weight += weight
+
+    if total_weight == 0:
+        result.average = None  # Không có trọng số hợp lệ
+    else:
+        result.average = total_weighted_score / total_weight
+
+    # Lưu kết quả vào database
+    db.session.commit()
+
+    return {"message": "Average calculated successfully.", "average": result.average}
 # ==========================================================================================================================
 
 def assign_subject_to_class(class_id, subject_id):

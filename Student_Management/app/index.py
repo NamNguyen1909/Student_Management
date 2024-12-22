@@ -257,52 +257,6 @@ def check_or_create_result():
         print(f"Error checking/creating result: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
-
-# @app.route('/api/save-scores', methods=['POST'])
-# @login_required
-# def save_scores():
-#     try:
-#         data = request.get_json()
-#         if not data:
-#             return jsonify({'error': 'No data provided'}), 400
-#
-#         for item in data:
-#             result_id = item.get('result_id')
-#             scores = item.get('scores')
-#
-#             if not result_id or not scores:
-#                 return jsonify({'error': 'Missing required fields'}), 400
-#
-#             for score in scores:
-#                 score_type_id = score.get('score_type_id')
-#                 value = score.get('value')
-#
-#                 if score_type_id is None or value is None:
-#                     continue
-#
-#                 score_detail = ScoreDetail.query.filter_by(
-#                     result_id=result_id,
-#                     score_type_id=score_type_id
-#                 ).first()
-#
-#                 if not score_detail:
-#                     score_detail = ScoreDetail(
-#                         result_id=result_id,
-#                         score_type_id=score_type_id,
-#                         value=value
-#                     )
-#                     db.session.add(score_detail)
-#                 else:
-#                     score_detail.value = value
-#
-#         db.session.commit()
-#         return jsonify({'message': 'Scores saved successfully'}), 200
-#
-#     except SQLAlchemyError as e:
-#         print(f"Error saving scores: {e}")
-#         db.session.rollback()
-#         return jsonify({'error': 'Internal server error'}), 500
-
 @app.route('/api/save-scores', methods=['POST'])
 @login_required
 def save_scores():
@@ -319,8 +273,6 @@ def save_scores():
 
             if not student_id or not subject_id or not semester_id or not scores:
                 print(data)
-
-
                 return jsonify({'error': 'Missing required fields'}), 400
 
             # Kiểm tra hoặc tạo Result
@@ -357,6 +309,11 @@ def save_scores():
                     score_detail.value = value
 
         db.session.commit()
+
+        #Cập nhật điểm trung bình
+        calculate_average(result.id)
+        db.session.commit()
+
         return jsonify({'message': 'Scores saved successfully'}), 200
 
     except SQLAlchemyError as e:
@@ -364,6 +321,42 @@ def save_scores():
         db.session.rollback()
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/view_score', methods=['GET', 'POST'])
+def view_score():
+    if request.method == 'POST':
+        # Lấy thông tin từ form
+        class_id = request.form.get('class_id')
+        year = request.form.get('year')
+
+        # Lấy tất cả các semester.id tương ứng với year đã chọn
+        semesters = Semester.query.filter_by(year=year).all()
+        semester_ids = [s.id for s in semesters]
+
+        # Lấy danh sách học sinh của lớp được chọn
+        students = Student.query.filter_by(class_id=class_id).all()
+
+        # Tính điểm trung bình cho từng học sinh theo học kỳ
+        results_data = []
+        for student in students:
+            user = User.query.get(student.user_id)  # Lấy thông tin User
+            averages = {}
+            for semester_id in semester_ids:
+                results = Result.query.filter_by(student_id=student.id, semester_id=semester_id).all()
+                if results:
+                    averages[semester_id] = sum([r.average for r in results if r.average]) / len(results)
+                else:
+                    averages[semester_id] = None
+
+            results_data.append({
+                'name': user.name,
+                'class_name': Class.query.get(class_id).name,
+                'averages': averages
+            })
+
+        return render_template('/teacher/view_score.html', results=results_data, year=year, semester_ids=semester_ids, classes=Class.query.all(), years=Semester.query.with_entities(Semester.year).distinct().all())
+
+    # GET request: Hiển thị form chọn lớp và năm học
+    return render_template('/teacher/view_score.html', classes=Class.query.all(), years=Semester.query.with_entities(Semester.year).distinct().all())
 
 # =============================================================================
 

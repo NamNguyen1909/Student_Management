@@ -107,11 +107,10 @@ class Regulation(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
     value = Column(Integer, nullable=True)
-    note = Column(String(255), nullable=True) \
- \
-        # Subject Table
+    note = Column(String(255), nullable=True)
 
 
+# Subject Table
 class Subject(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
