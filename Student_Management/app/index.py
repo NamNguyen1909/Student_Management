@@ -374,6 +374,7 @@ def save_scores():
 
 # =============================================================================
 
+
 # @app.route('/employee/register_student')
 # @login_required
 # def register_student():
@@ -474,7 +475,6 @@ def register_student():
                 err_msg = str(e)
 
     return render_template('employee/register_student.html', err_msg=err_msg)
-
 
 
 
