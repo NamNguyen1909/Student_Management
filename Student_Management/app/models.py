@@ -1,5 +1,4 @@
 # Student_Management/app/models.py
-import hashlib
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, Enum, DateTime
@@ -7,7 +6,7 @@ from enum import Enum as RoleEnum
 from flask_login import UserMixin
 from datetime import datetime
 
-from app import app, db
+from Student_Management.app import app, db
 
 
 # Define User Roles

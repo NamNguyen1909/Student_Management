@@ -1,10 +1,10 @@
 from flask import redirect, url_for, session, flash
 from flask_admin import BaseView, expose, AdminIndexView, Admin
 
-from app import app, db, dao
+from Student_Management.app import app, db, dao
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
-from app.models import UserRole, User, Student, Teacher, Class, Employee, Regulation
+from Student_Management.app.models import UserRole, User, Student, Teacher, Class, Employee, Regulation
 import json
 
 class AuthenticatedView(BaseView):

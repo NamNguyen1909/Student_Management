@@ -1,10 +1,8 @@
 # Student_Management/app/dao.py
 
 import hashlib
-from app import app, db
-from app.models import *
-import cloudinary.uploader
-from flask_login import current_user
+from Student_Management.app import app, db
+from Student_Management.app.models import *
 
 
 def auth_user(username,password,role=None):
