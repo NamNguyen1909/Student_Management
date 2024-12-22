@@ -21,9 +21,8 @@ def login_process():
             login_user(user)
 
             # Chuyển hướng dựa trên vai trò
-            if user.user_role == UserRole.ADMIN:
-                return redirect(url_for('admin_dashboard'))
-            elif user.user_role == UserRole.STUDENT:
+
+            if user.user_role == UserRole.STUDENT:
                 return redirect(url_for('student_dashboard'))
             elif user.user_role == UserRole.TEACHER:
                 return redirect(url_for('teacher_dashboard'))
@@ -37,10 +36,6 @@ def login_process():
 
     return render_template('login.html')
 
-@app.route("/admin")
-@login_required
-def admin_dashboard():
-    return render_template('admin/admin.html', UserRole=UserRole)
 
 @app.route("/student")
 @login_required
@@ -82,9 +77,8 @@ def changepassword():
         flash("Mật khẩu đã được thay đổi thành công!", "success")
 
         # Kiểm tra vai trò của người dùng và chuyển hướng tới trang tương ứng
-        if current_user.user_role == UserRole.ADMIN:
-            return redirect("/admin")
-        elif current_user.user_role == UserRole.TEACHER:
+
+        if current_user.user_role == UserRole.TEACHER:
             return redirect("/teacher")
         elif current_user.user_role == UserRole.EMPLOYEE:
             return redirect("/employee")
@@ -485,4 +479,5 @@ def register_student():
 
 
 if __name__ == "__main__":
+    from app.admin import *
     app.run(debug=True)

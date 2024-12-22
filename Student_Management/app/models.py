@@ -7,7 +7,7 @@ from enum import Enum as RoleEnum
 from flask_login import UserMixin
 from datetime import datetime
 
-from app import app,db
+from app import app, db
 
 
 # Define User Roles
@@ -23,7 +23,8 @@ class User(db.Model, UserMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(100), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
-    avatar = Column(String(255), nullable=True, default='https://res.cloudinary.com/ds05mb5xf/image/upload/v1734438824/avatar-default-symbolic-icon-479x512-n8sg74wg_rvl14k.png')
+    avatar = Column(String(255), nullable=True,
+                    default='https://res.cloudinary.com/ds05mb5xf/image/upload/v1734438824/avatar-default-symbolic-icon-479x512-n8sg74wg_rvl14k.png')
     name = Column(String(100), nullable=False)
     sex = Column(Boolean, default=True)
     dob = Column(DateTime)
@@ -36,10 +37,11 @@ class User(db.Model, UserMixin):
     user_role = Column(Enum(UserRole), default=UserRole.STUDENT)
 
     # Relationships
-    # students = relationship('Student', backref='user-', lazy=True)
+    students = relationship('Student', backref='user-', lazy=True)
     teachers = relationship('Teacher', backref='user-', lazy=True)
-    # employees = relationship('Employee', backref='user-', lazy=True)
-    # admin= relationship('Admin', backref='user-', lazy=True)
+    employees = relationship('Employee', backref='user-', lazy=True)
+    admin = relationship('Admin', backref='user-', lazy=True)
+
 
 # Grade Level Table
 class GradeLevel(db.Model):
@@ -49,6 +51,7 @@ class GradeLevel(db.Model):
     # Relationships
     students = relationship('Student', backref='grade_level', lazy=True)
     classes = relationship('Class', backref='grade_level', lazy=True)
+
 
 # Class Table
 class Class(db.Model):
@@ -66,6 +69,7 @@ class Admin(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
 
+
 # Student Table
 class Student(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -79,15 +83,15 @@ class Student(db.Model):
     # class_ = relationship('Class', backref='student_relationship')  # Mối quan hệ với Class
 
 
-
 # Teacher Table
 class Teacher(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
 
     # Relationships
-    user = relationship('User', backref='teacher')
+    # user = relationship('User', backref='teacher', uselist=False)
     subjects = relationship('Subject', secondary='teacher_subject', backref='teachers')  # Nhiều môn học
+
 
 # Employee Table
 class Employee(db.Model):
@@ -99,17 +103,16 @@ class Employee(db.Model):
     # user = relationship('User', backref='employee', uselist=False)
 
 
-
-
 # Regulation Table
 class Regulation(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
     value = Column(Integer, nullable=True)
-    note = Column(String(255), nullable=True)\
+    note = Column(String(255), nullable=True) \
+ \
+        # Subject Table
 
 
-# Subject Table
 class Subject(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
@@ -117,15 +120,17 @@ class Subject(db.Model):
     # Relationships
     results = relationship('Result', backref='subject', lazy=True)
 
+
 # Semester Table
 class Semester(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
     year = Column(String(20), nullable=False)
-    
+
     # Relationships
     results = relationship('Result', backref='semester', lazy=True)
-    # subjects = relationship('Subject', secondary='semester_subject', backref='semesters')  # Nhiều môn học
+    subjects = relationship('Subject', secondary='semester_subject', backref='semesters')  # Nhiều môn học
+
 
 # Result Table
 class Result(db.Model):
@@ -148,11 +153,12 @@ class ScoreType(db.Model):
     # Relationships
     scores = relationship('ScoreDetail', backref='score_type', lazy=True)
 
+
 # Score Detail Table
 class ScoreDetail(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     result_id = Column(Integer, ForeignKey(Result.id), nullable=False)
-    value = Column(Float, nullable=True,default=0)
+    value = Column(Float, nullable=True, default=0)
     score_type_id = Column(Integer, ForeignKey(ScoreType.id), nullable=False)
 
 
@@ -185,6 +191,7 @@ class SemesterSubject(db.Model):
     semester = db.relationship('Semester', backref='semester_subjects')
     subject = db.relationship('Subject', backref='semester_subjects')
 
+
 class ClassSubject(db.Model):
     __tablename__ = 'class_subject'
 
@@ -193,7 +200,6 @@ class ClassSubject(db.Model):
 
     class_ = db.relationship('Class', backref='class_subjects')
     subject = db.relationship('Subject', backref='class_subjects')
-
 
 
 if __name__ == '__main__':
