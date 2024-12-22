@@ -12,7 +12,8 @@ app = Flask(__name__)
 
 app.secret_key='SADKJH873414B31#@#!@#213K1HG1I5UH13294Y194HLKWQYE987Y1I34UH2I3YT187EWIOJKHQE87Q'
 
-app.config["SQLALCHEMY_DATABASE_URI"] ="mysql+pymysql://root:%s@localhost/school?charset=utf8mb4" %quote("ThanhNam*1909")
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:12345678@localhost/qlhs?charset=utf8mb4"
+
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 
