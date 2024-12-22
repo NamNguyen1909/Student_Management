@@ -1,11 +1,11 @@
-from flask import redirect, url_for, session, flash
+from flask import redirect, session
 from flask_admin import BaseView, expose, AdminIndexView, Admin
 
-from Student_Management.app import app, db, dao
+from app import app, db
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
-from Student_Management.app.models import UserRole, User, Student, Teacher, Class, Employee, Regulation
-import json
+from app.models import UserRole, User, Class, Regulation
+
 
 class AuthenticatedView(BaseView):
     def is_accessible(self):

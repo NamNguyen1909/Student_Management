@@ -6,7 +6,7 @@ from enum import Enum as RoleEnum
 from flask_login import UserMixin
 from datetime import datetime
 
-from Student_Management.app import app, db
+from app import app, db
 
 
 # Define User Roles

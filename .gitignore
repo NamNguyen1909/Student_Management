@@ -123,7 +123,7 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
+Student_Management/.venv
 env/
 venv/
 ENV/

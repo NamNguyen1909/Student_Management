@@ -1,8 +1,7 @@
 from flask import request, redirect, render_template, flash, url_for, jsonify
-from Student_Management.app import app, login, dao
+from app import login, dao
 from flask_login import login_user, logout_user, login_required
-from Student_Management.app.models import UserRole, User, Teacher, Subject, TeacherSubject, ClassSubject, SemesterSubject, Student, StudentSubject
-from Student_Management.app.dao import *
+from app.dao import *
 from sqlalchemy.exc import SQLAlchemyError
 
 @app.route("/")
@@ -479,5 +478,5 @@ def register_student():
 
 
 if __name__ == "__main__":
-    from Student_Management.app.admin import *
+    from app.admin import *
     app.run(debug=True)
