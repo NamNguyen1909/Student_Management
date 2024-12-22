@@ -11,10 +11,23 @@
             <strong>School Name</strong>
         </a>
 
-        <!-- Bên phải: Nút Đăng nhập -->
+              <!-- Bên phải: Tùy thuộc vào trạng thái đăng nhập -->
+        {% if current_user.is_authenticated %}
+        <div class="d-flex align-items-center">
+            <!-- Hiển thị username và avatar -->
+            <a class="nav-link text-light d-flex align-items-center me-3" href="/teacher">
+                <img src="{{ current_user.avatar }}" width="30" class="rounded-circle">
+                <span class="ms-2">{{ current_user.username }}</span>
+            </a>
+            <!-- Nút đăng xuất -->
+            <a class="btn btn-outline-light" href="/logout">Đăng xuất</a>
+        </div>
+        {% else %}
+        <!-- Nút đăng nhập khi chưa đăng nhập -->
         <div class="d-flex">
             <a href="/login" class="btn btn-light me-2">Đăng nhập</a>
         </div>
+        {% endif %}
     </div>
 </nav>
 
