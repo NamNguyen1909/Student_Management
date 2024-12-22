@@ -21,8 +21,9 @@ def login_process():
             login_user(user)
 
             # Chuyển hướng dựa trên vai trò
-
-            if user.user_role == UserRole.STUDENT:
+            if user.user_role == UserRole.ADMIN:
+                return redirect('/admin')
+            elif user.user_role == UserRole.STUDENT:
                 return redirect(url_for('student_dashboard'))
             elif user.user_role == UserRole.TEACHER:
                 return redirect(url_for('teacher_dashboard'))
