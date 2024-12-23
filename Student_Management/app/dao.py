@@ -290,6 +290,13 @@ def create_fake_data():
             "phone": "0919876543",
             "email": "phuc.le@example.com",
         },
+        {
+            "name": "Nguyễn Vĩ Khang",
+            "dob": datetime(1995, 3, 16),
+            "address": "TP Hồ Chí Minh",
+            "phone": "0914066624",
+            "email": "khang.le@example.com",
+        },
     ]
     for admin in admins:
         user = User(
