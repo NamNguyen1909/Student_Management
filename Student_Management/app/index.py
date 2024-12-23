@@ -13,7 +13,7 @@ from flask import Flask, send_file
 
 @app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template('index.html', UserRole=UserRole)
 
 @app.route("/login", methods=['get', 'post'])
 def login_process():
@@ -46,7 +46,17 @@ def login_process():
 @app.route("/student")
 @login_required
 def student_dashboard():
-    return render_template('/student/student.html', UserRole=UserRole)
+    # Lấy student hiện tại từ current_user
+    if not current_user.students:
+        return render_template('/student/student.html', UserRole=UserRole, subjects=[])
+
+    current_student_id = current_user.students[0].id
+
+    # Lấy danh sách các môn học mà sinh viên đã học
+    subjects = db.session.query(Subject).join(StudentSubject).filter(
+        StudentSubject.student_id == current_student_id).all()
+
+    return render_template('/student/student.html', UserRole=UserRole, subjects=subjects)
 
 @app.route("/teacher")
 @login_required
@@ -65,6 +75,7 @@ def load_user(user_id):
 @app.route("/logout")
 def logout_process():
     logout_user()
+    session.clear()
     return redirect('/login')
 
 @app.route("/changepassword", methods=["GET", "POST"])
@@ -133,6 +144,7 @@ def get_classes(subject_id):
 
 @app.route('/api/get-semesters', methods=['GET'])
 @app.route('/api/get-semesters/<int:subject_id>', methods=['GET'])
+@login_required
 def get_semesters(subject_id=None):
     try:
         if not subject_id:
@@ -162,6 +174,7 @@ def get_semesters(subject_id=None):
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/get-semester-year', methods=['GET'])
+@login_required
 def get_semester_year():
     semester_id = request.args.get('semester_id')
     subject_id = request.args.get('subject_id')
@@ -329,6 +342,7 @@ def save_scores():
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/view_score', methods=['GET', 'POST'])
+@login_required
 def view_score():
     if request.method == 'POST':
         # Lấy thông tin từ form
@@ -388,6 +402,7 @@ def remove_vietnamese_accents(text):
     return ''.join([c for c in nfkd if not unicodedata.combining(c)])
 
 @app.route('/download_score_pdf')
+@login_required
 def download_score_pdf():
     # Lấy thông tin từ query string
     class_id = request.args.get('class_id')

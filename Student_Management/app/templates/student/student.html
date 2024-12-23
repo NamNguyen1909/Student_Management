@@ -19,11 +19,11 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="/teacher/editscore">ST chức năng 1</a>
+          <a class="nav-link" href="/student/editscore">ST chức năng 1</a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="/teacher/result">ST chức năng 2</a>
+          <a class="nav-link" href="/student/result">ST chức năng 2</a>
         </li>
 
       </ul>
@@ -32,7 +32,7 @@
       <ul class="navbar-nav ms-auto">
         {% if current_user.is_authenticated %}
         <li class="nav-item mr-3 ml-3">
-          <a class="nav-link text-danger" href="/teacher">
+          <a class="nav-link text-danger" href="/student">
               <img src="{{current_user.avatar}}" width="30" class="rounded-circle">
               <span class="ms-3">{{current_user.username}}</span>
           </a>
@@ -88,7 +88,7 @@
             <li class="list-group-item">
               <strong>Trạng thái:</strong>
               {% if current_user.is_active %}
-                Đang dạy
+                Đang học
               {% else %}
                 Đã nghỉ
               {% endif %}
@@ -114,7 +114,7 @@
     <div class="col-md-6">
       <div class="card">
         <div class="card-header bg-primary text-white">
-          Danh sách các môn đã dạy
+          Danh sách các môn đã/đang học
         </div>
         <div class="card-body">
           <table class="table table-bordered">
@@ -126,19 +126,19 @@
               </tr>
             </thead>
             <tbody>
-              {% if current_user.teachers %}
-              {% for subject in current_user.teachers[0].subjects %}
+            {% if subjects %}
+              {% for subject in subjects %}
               <tr>
                 <td>{{ loop.index }}</td>
                 <td>{{ subject.name }}</td>
-                <td>{{ subject.id }}</td> <!-- Assuming 'id' as the subject code -->
+                <td>{{ subject.id }}</td>
               </tr>
               {% endfor %}
-              {% else %}
-              <tr>
-                <td colspan="3" class="text-center">Không có dữ liệu</td>
-              </tr>
-              {% endif %}
+            {% else %}
+            <tr>
+              <td colspan="3" class="text-center">Không có dữ liệu</td>
+            </tr>
+            {% endif %}
             </tbody>
           </table>
         </div>
