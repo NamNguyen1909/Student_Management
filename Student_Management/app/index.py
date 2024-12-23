@@ -1,4 +1,4 @@
-from flask import request, redirect, render_template, flash, url_for, jsonify
+from flask import request, redirect, render_template, flash, url_for, jsonify,get_flashed_messages
 from app import login, dao
 from flask_login import login_user, logout_user, login_required
 from app.dao import *
@@ -15,32 +15,35 @@ from flask import Flask, send_file
 def index():
     return render_template('index.html', UserRole=UserRole)
 
-@app.route("/login", methods=['get', 'post'])
+@app.route("/login", methods=['GET', 'POST'])
 def login_process():
-    if request.method.__eq__('POST'):
+    if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
 
         user = dao.auth_user(username=username, password=password)
+
         if user:
-            login_user(user)
+            if not user.is_active:
+                flash('Tài khoản vô hiệu!', 'danger')
+            else:
+                login_user(user)
 
-            # Chuyển hướng dựa trên vai trò
-            if user.user_role == UserRole.ADMIN:
-                return redirect('/admin')
-            elif user.user_role == UserRole.STUDENT:
-                return redirect(url_for('student_dashboard'))
-            elif user.user_role == UserRole.TEACHER:
-                return redirect(url_for('teacher_dashboard'))
-            elif user.user_role == UserRole.EMPLOYEE:
-                return redirect(url_for('employee_dashboard'))
-
-            flash('Role not recognized!', 'danger')
-            return redirect(url_for('login_process'))
+                # Chuyển hướng dựa trên vai trò
+                if user.user_role == UserRole.ADMIN:
+                    return redirect('/admin')
+                elif user.user_role == UserRole.STUDENT:
+                    return redirect(url_for('student_dashboard'))
+                elif user.user_role == UserRole.TEACHER:
+                    return redirect(url_for('teacher_dashboard'))
+                elif user.user_role == UserRole.EMPLOYEE:
+                    return redirect(url_for('employee_dashboard'))
         else:
-            flash('Invalid username or password!', 'danger')
+            flash('Tài khoản hoặc mật khẩu không đúng!', 'danger')
 
-    return render_template('login.html')
+    # Render login.html với các thông báo
+    messages = get_flashed_messages(with_categories=True)
+    return render_template('login.html', messages=messages)
 
 
 @app.route("/student")
@@ -66,7 +69,8 @@ def teacher_dashboard():
 @app.route("/employee")
 @login_required
 def employee_dashboard():
-    return render_template('employee/employee.html', UserRole=UserRole)
+    classes = dao.employee_classes()
+    return render_template('employee/employee.html', UserRole=UserRole, classes=classes)
 
 @login.user_loader
 def load_user(user_id):

@@ -1,43 +1,73 @@
-<!--Student_Management/app/templates/login.html-->
-
 {% extends 'layout/base.html' %}
 
 {% block content %}
 <div class="container-fluid p-5 bg-primary text-white text-center">
-  <h1>Trường ABC</h1>
-  <p>Một cái gì đó</p>
+    <h1>Trường ABC</h1>
+    <p>Một cái gì đó</p>
 </div>
 
 <div class="container mt-5">
-  <h1 class="text-center text-danger mt-1" href="/" >ĐĂNG NHẬP</h1>
+    <h1 class="text-center text-danger mt-1">ĐĂNG NHẬP</h1>
+    <!-- Container cho thông báo -->
+    <div id="flash-container" class="position-fixed top-0 end-0 p-3 mt-6" style="z-index: 1050;"></div>
 
-  <form method="post" >
-
-    <!-- Tạo container cho các input -->
-    <div class="row justify-content-center">
-      <div class="col-md-6"> <!-- Điều chỉnh chiều rộng input -->
-        <div class="form-floating mb-3 mt-3">
-            <input type="text" class="form-control" id="username" placeholder="Họ tên" name="username">
-            <label for="username">Tên đăng nhập</label>
+    <form method="post">
+        <!-- Input -->
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="form-floating mb-3 mt-3">
+                    <input type="text" class="form-control" id="username" placeholder="Họ tên" name="username">
+                    <label for="username">Tên đăng nhập</label>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <div class="row justify-content-center">
-      <div class="col-md-6"> <!-- Điều chỉnh chiều rộng input -->
-        <div class="form-floating mb-3 mt-3">
-            <input type="password" class="form-control" id="password" placeholder="Mật khẩu" name="password">
-            <label for="password">Mật khẩu</label>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="form-floating mb-3 mt-3">
+                    <input type="password" class="form-control" id="password" placeholder="Mật khẩu" name="password">
+                    <label for="password">Mật khẩu</label>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-     <div class="d-flex justify-content-center">
-        <div class="form-floating mb-3 mt-3">
+        <div class="d-flex justify-content-center">
             <button type="submit" class="btn btn-success">Đăng nhập</button>
         </div>
-     </div>
-  </form>
+    </form>
 </div>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Hàm hiển thị thông báo đã được định nghĩa
+        function showFlashMessage(message, isError = false) {
+            const flashContainer = document.getElementById("flash-container");
+            if (!flashContainer) {
+                console.error("Flash container not found!");
+                return;
+            }
+
+            const alertDiv = document.createElement("div");
+            alertDiv.className = `alert alert-dismissible fade show ${isError ? "alert-danger" : "alert-success"}`;
+            alertDiv.role = "alert";
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            flashContainer.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.classList.remove("show");
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // Lấy thông báo từ Flask
+        const messages = {{ messages|tojson }};
+        messages.forEach(([category, message]) => {
+            showFlashMessage(message, category === 'danger');
+        });
+    });
+</script>
 {% endblock %}
