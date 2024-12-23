@@ -53,7 +53,7 @@ def student_dashboard():
     if not current_user.students:
         return render_template('/student/student.html', UserRole=UserRole, subjects=[])
 
-    current_student_id = current_user.students[0].id
+    current_student_id = current_user.students.id
 
     # Lấy danh sách các môn học mà sinh viên đã học
     subjects = db.session.query(Subject).join(StudentSubject).filter(
@@ -345,7 +345,7 @@ def save_scores():
         db.session.rollback()
         return jsonify({'error': 'Internal server error'}), 500
 
-@app.route('/view_score', methods=['GET', 'POST'])
+@app.route('/teacher/view_score', methods=['GET', 'POST'])
 @login_required
 def view_score():
     if request.method == 'POST':
@@ -488,6 +488,55 @@ def download_score_pdf():
 
     # Trả file PDF về client
     return send_file(buffer, as_attachment=True, download_name=f"bang_diem_{remove_vietnamese_accents(class_name)}_{year}.pdf", mimetype='application/pdf')
+
+
+@app.route('/student/my_results')
+@login_required
+def my_results():
+    student = current_user.student[0]
+    if not student:
+        return "Student not found", 404
+
+    student_id = student.id
+    student_name = current_user.name
+    student_username = current_user.username
+
+    # Query results grouped by year
+    results = db.session.query(
+        Semester.year,
+        db.func.avg(Result.average).label('year_average')
+    ).join(Result, Result.semester_id == Semester.id)\
+    .filter(Result.student_id == student_id)\
+    .group_by(Semester.year)\
+    .all()
+
+    # Fetch class, grade level, and subjects
+    class_info = Class.query.get(student.class_id)
+    grade_level_name = class_info.grade_level.name if class_info else "Unknown"
+
+    # Prepare data for display
+    table_data = []
+    for year, year_average in results:
+        # Query subjects for the year
+        subjects = db.session.query(Subject.name).join(Result, Result.subject_id == Subject.id)\
+        .join(Semester, Semester.id == Result.semester_id)\
+        .filter(Result.student_id == student_id, Semester.year == year)\
+        .all()
+
+        for subject_name in subjects:
+            table_data.append({
+                'Gradelevel': grade_level_name,
+                'Class': class_info.name if class_info else "Unknown",
+                'Year': year,
+                'Subject': subject_name[0],
+                'Result': round(year_average, 2),
+                'Pass': "Đạt" if year_average >= 4 else "Không đạt"
+            })
+
+    return render_template('/student/my_results.html',
+                           table_data=table_data,
+                           student_name=student_name,
+                           student_username=student_username)
 
 
 # =============================================================================

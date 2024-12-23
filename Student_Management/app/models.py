@@ -36,7 +36,7 @@ class User(db.Model, UserMixin):
     user_role = Column(Enum(UserRole), default=UserRole.STUDENT)
 
     # Relationships
-    students = relationship('Student', backref='user-', lazy=True)
+    students = relationship('Student', backref='user-', uselist=False)
     teachers = relationship('Teacher', backref='user-', lazy=True)
     employees = relationship('Employee', backref='user-', lazy=True)
     admin = relationship('Admin', backref='user-', lazy=True)
