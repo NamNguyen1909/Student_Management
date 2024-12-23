@@ -408,86 +408,90 @@ def remove_vietnamese_accents(text):
 @app.route('/download_score_pdf')
 @login_required
 def download_score_pdf():
-    # Lấy thông tin từ query string
     class_id = request.args.get('class_id')
     year = request.args.get('year')
 
     if not class_id or not year:
-        return "Thiếu thông tin lớp hoặc năm học", 400
+        flash("Thiếu thông tin lớp hoặc năm học. Vui lòng kiểm tra lại.", "danger")
+        return redirect(url_for('view_score'))  # Điều hướng về trang nhập thông tin
 
-    # Lấy danh sách học kỳ
-    semesters = Semester.query.filter_by(year=year).all()
-    semester_ids = [s.id for s in semesters]
+    try:
+        semesters = Semester.query.filter_by(year=year).all()
+        if not semesters:
+            flash(f"Năm học {year} không có học kỳ nào!", "warning")
+            return redirect(url_for('view_score'))
 
-    # Lấy danh sách học sinh của lớp
-    students = Student.query.filter_by(class_id=class_id).all()
+        semester_ids = [s.id for s in semesters]
+        students = Student.query.filter_by(class_id=class_id).all()
+        if not students:
+            flash(f"Lớp {class_id} không có học sinh nào!", "warning")
+            return redirect(url_for('view_score'))
 
-    # Tính điểm trung bình
-    results_data = []
-    for student in students:
-        user = User.query.get(student.user_id)  # Thông tin User
-        averages = {}
-        for semester_id in semester_ids:
-            results = Result.query.filter_by(student_id=student.id, semester_id=semester_id).all()
-            if results:
-                averages[semester_id] = sum([r.average for r in results if r.average]) / len(results)
-            else:
-                averages[semester_id] = None
+        results_data = []
+        for student in students:
+            user = User.query.get(student.user_id)
+            averages = {}
+            for semester_id in semester_ids:
+                results = Result.query.filter_by(student_id=student.id, semester_id=semester_id).all()
+                averages[semester_id] = (
+                    sum(r.average for r in results if r.average) / len(results)
+                    if results else None
+                )
 
-        results_data.append({
-            'name': user.name,
-            'averages': averages
-        })
+            results_data.append({
+                'name': user.name,
+                'averages': averages
+            })
 
-    # Lấy thông tin lớp
-    class_name = Class.query.get(class_id).name
+        class_name = Class.query.get(class_id).name
 
-    # Tạo file PDF
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        title = [["BANG DIEM LOP " + remove_vietnamese_accents(class_name), f"NAM HOC: {year}"]]
+        title_table = Table(title)
+        title_table.setStyle(TableStyle([
+            ('SPAN', (0, 0), (-1, 0)),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ]))
+        elements.append(title_table)
 
-    # Tiêu đề
-    elements = []
-    title = [["BANG DIEM LOP " + remove_vietnamese_accents(class_name), f"NAM HOC: {year}"]]
-    title_table = Table(title)
-    title_table.setStyle(TableStyle([
-        ('SPAN', (0, 0), (-1, 0)),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-    ]))
-    elements.append(title_table)
+        data = [["STT", "Ho ten"] + [f"Diem TB HK{sem}" for sem in range(1, len(semester_ids) + 1)]]
+        for idx, result in enumerate(results_data, start=1):
+            row = [idx, remove_vietnamese_accents(result['name'])]
+            for semester_id in semester_ids:
+                avg = result['averages'].get(semester_id, "Khong co")
+                row.append(f"{avg:.2f}" if isinstance(avg, (int, float)) else avg)
+            data.append(row)
 
-    # Dữ liệu bảng
-    data = [["STT", "Ho ten"] + [f"Diem TB HK{sem}" for sem in range(1, len(semester_ids) + 1)]]
-    for idx, result in enumerate(results_data, start=1):
-        row = [idx, remove_vietnamese_accents(result['name'])]
-        for semester_id in semester_ids:
-            avg = result['averages'].get(semester_id, "Khong co")
-            row.append(f"{avg:.2f}" if isinstance(avg, (int, float)) else avg)
-        data.append(row)
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+        ]))
 
-    # Tạo bảng
-    table = Table(data)
-    table.setStyle(TableStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-    ]))
+        elements.append(table)
+        doc.build(elements)
+        buffer.seek(0)
+        flash("Tải xuống bảng điểm thành công!", "success")
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f"bang_diem_{remove_vietnamese_accents(class_name)}_{year}.pdf",
+            mimetype='application/pdf'
+        )
 
-    elements.append(table)
-
-    # Lưu PDF
-    doc.build(elements)
-    buffer.seek(0)
-
-    # Trả file PDF về client
-    return send_file(buffer, as_attachment=True, download_name=f"bang_diem_{remove_vietnamese_accents(class_name)}_{year}.pdf", mimetype='application/pdf')
+    except Exception as e:
+        flash(f"Có lỗi xảy ra: {str(e)}", "danger")
+        return redirect(url_for('view_score'))
 
 
 @app.route('/student/my_results')
