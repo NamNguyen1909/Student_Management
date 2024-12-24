@@ -3,6 +3,7 @@ from app import login, dao
 from flask_login import login_user, logout_user, login_required
 from app.dao import *
 from sqlalchemy.exc import SQLAlchemyError
+import cloudinary.uploader
 
 import unicodedata
 from reportlab.lib.pagesizes import letter
@@ -575,9 +576,13 @@ def register_student():
         email = request.form.get('email')
         class_id = request.form.get('class_id')
         password = request.form.get('password')
+        avatar = request.files.get('avatar')
 
         # Chuyển đổi dob thành datetime
         dob = datetime.strptime(dob, '%Y-%m-%d')
+
+        if avatar:
+            res = cloudinary.uploader.upload(avatar)
 
         # Kiểm tra độ tuổi hợp lệ
         if not check_regulation_for_student(dob):
@@ -593,7 +598,8 @@ def register_student():
                 sex=True if gender == 'male' else False,
                 address=address,
                 phone=phone,
-                email=email
+                email=email,
+                avatar=res.get('secure_url')
             )
             db.session.add(user)
             db.session.commit()
