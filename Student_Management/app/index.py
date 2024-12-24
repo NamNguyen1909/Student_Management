@@ -545,6 +545,90 @@ def my_results():
                            student_username=student_username)
 
 
+
+
+
+
+@app.route('/api/fetch-classes', methods=['GET'])
+@login_required
+def fetch_classes():
+    try:
+        classes = Class.query.all()
+        class_list = [{'id': c.id, 'name': c.name, 'si_so': c.si_so} for c in classes]
+        return jsonify(class_list)
+    except SQLAlchemyError as e:
+        print(f"Error fetching classes: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/get-class-subjects', methods=['GET'])
+@login_required
+def get_class_subjects():
+    try:
+        class_id = request.args.get('class_id', type=int)
+        if not class_id:
+            return jsonify({'error': 'Missing class_id'}), 400
+
+        class_subjects = ClassSubject.query.filter_by(class_id=class_id).all()
+        subjects = [{'id': cs.subject.id, 'name': cs.subject.name} for cs in class_subjects]
+        return jsonify(subjects)
+    except SQLAlchemyError as e:
+        print(f"Error fetching class subjects: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/fetch-semesters', methods=['GET'])
+@login_required
+def fetch_semesters():
+    try:
+        semesters = Semester.query.all()
+        semester_list = [{'id': semester.id, 'name': semester.name, 'year': semester.year} for semester in semesters]
+        return jsonify(semester_list)
+    except SQLAlchemyError as e:
+        print(f"Error fetching semesters: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/get-report', methods=['GET'])
+@login_required
+def get_report():
+    try:
+        class_id = request.args.get('class_id', type=int)
+        subject_id = request.args.get('subject_id', type=int)
+        semester_id = request.args.get('semester_id', type=int)
+
+        if not (class_id and subject_id and semester_id):
+            return jsonify({'error': 'Missing parameters'}), 400
+
+        # Lấy danh sách học sinh trong lớp
+        students = Student.query.filter_by(class_id=class_id).all()
+        si_so = len(students)
+
+        # Lấy kết quả
+        results = Result.query.filter_by(
+            subject_id=subject_id,
+            semester_id=semester_id
+        ).all()
+
+        so_luong_dat = sum(1 for r in results if r.average is not None and r.average >= 4)
+
+        # Lấy thông tin học kỳ
+        semester = Semester.query.get(semester_id)
+
+        return jsonify({
+            'class_name': Class.query.get(class_id).name,
+            'subject_name': Subject.query.get(subject_id).name,
+            'semester_name': semester.name,
+            'semester_year': semester.year,
+            'si_so': si_so,
+            'so_luong_dat': so_luong_dat,
+            'ty_le': round((so_luong_dat / si_so) * 100, 2) if si_so > 0 else 0
+        })
+    except SQLAlchemyError as e:
+        print(f"Error generating report: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+
+
 # =============================================================================
 
 

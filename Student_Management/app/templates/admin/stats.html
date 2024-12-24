@@ -1,6 +1,208 @@
-{% extends 'admin/base.html'%}
+{% extends 'admin/base.html' %}
 
-{%block body%}
+{% block head %}
+    <!-- Thêm Chart.js qua CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
-<h1 class="text text-center text-success"></h1>
-{%endblock%}
+{% block body %}
+<h1 class="mt-3">BÁO CÁO TỔNG KẾT MÔN HỌC</h1>
+
+<form class="mb-4">
+    <div class="row">
+        <div class="col-md-4">
+            <label for="class-select" class="form-label">Chọn lớp:</label>
+            <select id="class-select" class="form-select" style="width: 100%; padding: 8px;">
+                <option value="" disabled selected>-- Chọn lớp --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="subject-select" class="form-label">Chọn môn học:</label>
+            <select id="subject-select" class="form-select" disabled style="width: 100%; padding: 8px;">
+                <option value="" disabled selected>-- Chọn môn học --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="semester-select" class="form-label">Chọn học kỳ:</label>
+            <select id="semester-select" class="form-select" disabled style="width: 100%; padding: 8px;">
+                <option value="" disabled selected>-- Chọn học kỳ --</option>
+            </select>
+        </div>
+    </div>
+    <button type="button" id="view-report" class="btn btn-primary mt-3" disabled style="padding: 10px 15px;">Xem Báo Cáo</button>
+</form>
+
+<!-- Kết quả báo cáo -->
+<div>
+    <div id="report-header" class="mt-4" style="display: none; font-size: 1.1em; font-weight: bold;">
+        <p><strong>Môn:</strong> <span id="report-subject"></span></p>
+        <p><strong>Học kỳ:</strong> <span id="report-semester"></span></p>
+        <p><strong>Năm học:</strong> <span id="report-year"></span></p>
+    </div>
+
+
+
+    <!-- Bảng kết quả -->
+<table id="report-table" class="table table-bordered table-striped mt-4" style="display: none;width: 100%; table-layout: fixed; overflow-wrap: break-word;">
+    <thead class="table-dark" style="background-color: #343a40; color: white;">
+        <tr>
+            <th style="text-align: center; padding: 8px; width: 20%;">STT</th>
+            <th style="text-align: center; padding: 8px; width: 20%;">Lớp</th>
+            <th style="text-align: center; padding: 8px; width: 20%;">Sĩ số</th>
+            <th style="text-align: center; padding: 8px; width: 20%;">Số lượng đạt</th>
+            <th style="text-align: center; padding: 8px; width: 20%;">Tỷ lệ (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+
+    <!-- Biểu đồ Bar -->
+<canvas id="bar-chart" style="display: none; width: 20%; height: 100px; margin: 0 auto;"></canvas>
+
+<!-- Biểu đồ Pie -->
+<canvas id="pie-chart" style="display: none; width: 20%; height: 100px; margin: 0 auto; max-width: 300px; max-height: 300px;"></canvas>
+
+</div>
+
+<script>
+ document.addEventListener('DOMContentLoaded', () => {
+    const classSelect = document.getElementById('class-select');
+    const subjectSelect = document.getElementById('subject-select');
+    const semesterSelect = document.getElementById('semester-select');
+    const viewReportButton = document.getElementById('view-report');
+    const reportTable = document.getElementById('report-table');
+    const barChartCanvas = document.getElementById('bar-chart');
+    const pieChartCanvas = document.getElementById('pie-chart');
+
+    // Kiểm tra trạng thái nút "Xem Báo Cáo"
+    function checkFormCompletion() {
+        if (classSelect.value && subjectSelect.value && semesterSelect.value) {
+            viewReportButton.disabled = false;
+        } else {
+            viewReportButton.disabled = true;
+        }
+    }
+
+    // Load danh sách lớp
+    fetch('/api/fetch-classes')
+        .then(res => res.json())
+        .then(data => {
+            data.forEach(cls => {
+                const option = document.createElement('option');
+                option.value = cls.id;
+                option.textContent = cls.name;
+                classSelect.appendChild(option);
+            });
+        });
+
+    // Khi chọn lớp
+    classSelect.addEventListener('change', () => {
+        subjectSelect.disabled = false;
+        subjectSelect.innerHTML = '<option value="" disabled selected>-- Chọn môn học --</option>';
+        semesterSelect.disabled = true;  // Reset học kỳ
+
+        // Reset nút báo cáo
+        viewReportButton.disabled = true;
+
+        fetch(`/api/get-class-subjects?class_id=${classSelect.value}`)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(subj => {
+                    const option = document.createElement('option');
+                    option.value = subj.id;
+                    option.textContent = subj.name;
+                    subjectSelect.appendChild(option);
+                });
+            });
+    });
+
+    // Khi chọn môn học
+    subjectSelect.addEventListener('change', () => {
+        semesterSelect.disabled = false;
+        semesterSelect.innerHTML = '<option value="" disabled selected>-- Chọn học kỳ --</option>';
+
+        // Reset nút báo cáo
+        viewReportButton.disabled = true;
+
+        fetch(`/api/fetch-semesters`)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(semester => {
+                    const option = document.createElement('option');
+                    option.value = semester.id;
+                    option.textContent = `${semester.name} - ${semester.year}`;
+                    semesterSelect.appendChild(option);
+                });
+            });
+    });
+
+    // Khi chọn học kỳ và nhấn nút xem báo cáo
+    semesterSelect.addEventListener('change', () => {
+        checkFormCompletion();  // Kiểm tra khi chọn học kỳ
+    });
+
+    viewReportButton.addEventListener('click', () => {
+        fetch(`/api/get-report?class_id=${classSelect.value}&subject_id=${subjectSelect.value}&semester_id=${semesterSelect.value}`)
+            .then(res => res.json())
+            .then(data => {
+                // Hiển thị bảng kết quả báo cáo
+                reportTable.style.display = 'block';
+                const tbody = reportTable.querySelector('tbody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td style="text-align: center; padding: 8px;">1</td>
+                        <td style="text-align: center; padding: 8px;">${data.class_name}</td>
+                        <td style="text-align: center; padding: 8px;">${data.si_so}</td>
+                        <td style="text-align: center; padding: 8px;">${data.so_luong_dat}</td>
+                        <td style="text-align: center; padding: 8px;">${data.ty_le}%</td>
+                    </tr>
+                `;
+
+                // Tạo biểu đồ Bar
+                const barChart = new Chart(barChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Sĩ số', 'Số lượng đạt'],
+                        datasets: [{
+                            label: 'Số liệu',
+                            data: [data.si_so, data.so_luong_dat],
+                            backgroundColor: ['rgba(54, 162, 235, 0.2)', 'rgba(75, 192, 192, 0.2)'],
+                            borderColor: ['rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Tạo biểu đồ Pie
+                const pieChart = new Chart(pieChartCanvas, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Đạt', 'Không đạt'],
+                        datasets: [{
+                            label: 'Tỷ lệ đạt',
+                            data: [data.so_luong_dat, data.si_so - data.so_luong_dat],
+                            backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                            borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                            borderWidth: 1
+                        }]
+                    }
+                });
+
+                // Hiển thị các biểu đồ
+                barChartCanvas.style.display = 'block';
+                pieChartCanvas.style.display = 'block';
+            });
+    });
+});
+</script>
+
+{% endblock %}
