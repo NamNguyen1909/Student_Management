@@ -408,6 +408,7 @@ def remove_vietnamese_accents(text):
 @app.route('/download_score_pdf')
 @login_required
 def download_score_pdf():
+
     class_id = request.args.get('class_id')
     year = request.args.get('year')
 
