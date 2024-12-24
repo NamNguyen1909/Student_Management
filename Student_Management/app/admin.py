@@ -56,10 +56,37 @@ class StatsView(AuthenticatedAdminView):
     def index(self):
         return self.render('admin/stats.html')
 
-admin = Admin(app=app, name='Quản lý', template_mode='bootstrap4', index_view=MyAdminIndex())
+
+
+# =========================================================================================================================
+class AboutUsView(BaseView):
+    @expose('/')
+    def index(self):
+        return self.render('admin/about-us.html')
+
+
+
+
+
+# =========================================================================================================================
+
+
+
+
+admin = Admin(app=app, name='Quản lý học sinh', template_mode='bootstrap4', index_view=MyAdminIndex())
 admin.add_view(UserView(User, db.session, name="Người dùng"))
 admin.add_view(ClassView(Class, db.session, name="Lớp học"))
 admin.add_view(StatsView(name="Thống kê báo cáo"))
 admin.add_view(RuleView(Regulation, db.session, name="Quy định"))
-admin.add_view(HomeView(name='Trang chủ người dùng'))
+admin.add_view(HomeView(name='Trang chủ'))
 admin.add_view(LogoutView(name='Đăng xuất'))
+
+
+# =========================================================================================================================
+admin.add_view(AboutUsView(name="Giới thiệu"))
+
+
+
+
+
+# =========================================================================================================================
