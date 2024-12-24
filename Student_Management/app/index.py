@@ -10,6 +10,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 from io import BytesIO
 from flask import Flask, send_file
+from app.models import *
 
 @app.route("/")
 def index():

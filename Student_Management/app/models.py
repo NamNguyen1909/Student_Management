@@ -1,4 +1,5 @@
 # Student_Management/app/models.py
+import hashlib
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, Enum, DateTime
@@ -7,6 +8,20 @@ from flask_login import UserMixin
 from datetime import datetime
 
 from app import app, db
+
+def generate_md5_hash(password):
+    """
+    Tạo hash MD5 từ mật khẩu đầu vào.
+
+    Args:
+        password (str): Mật khẩu cần tạo hash.
+
+    Returns:
+        str: Chuỗi hash MD5 của mật khẩu.
+    """
+    if not isinstance(password, str):
+        raise ValueError("Password must be a string.")
+    return hashlib.md5(password.strip().encode('utf-8')).hexdigest()
 
 
 # Define User Roles
@@ -36,11 +51,34 @@ class User(db.Model, UserMixin):
     user_role = Column(Enum(UserRole), default=UserRole.STUDENT)
 
     # Relationships
-    students = relationship('Student', backref='user-', uselist=False)
-    teachers = relationship('Teacher', backref='user-', lazy=True)
-    employees = relationship('Employee', backref='user-', lazy=True)
-    admin = relationship('Admin', backref='user-', lazy=True)
+    students = relationship('Student', backref='student_user', uselist=False,cascade='all, delete-orphan')
+    teachers = relationship('Teacher', backref='teacher_user', lazy=True,cascade='all, delete-orphan')
+    employees = relationship('Employee', backref='employee_user', lazy=True,cascade='all, delete-orphan')
+    admin = relationship('Admin', backref='user', lazy=True,cascade='all, delete-orphan')
 
+    def __str__(self):
+        return self.name
+
+    def set_password(self, password):
+        self.password = generate_md5_hash(password)
+
+    def check_password(self, password):
+        return self.password == generate_md5_hash(password)
+
+    def create_related_entity(self):
+        """
+        Tạo thực thể liên quan (Student, Teacher, Employee) dựa trên vai trò của user.
+        """
+        if self.user_role == UserRole.STUDENT:
+            return Student(user=self)
+        elif self.user_role == UserRole.TEACHER:
+            return Teacher(user=self)
+        elif self.user_role == UserRole.EMPLOYEE:
+            return Employee(user=self)
+        elif self.user_role == UserRole.ADMIN:
+            return Admin(user=self)
+        else:
+            raise ValueError("Không thể tạo thực thể liên quan cho vai trò này.")
 
 # Grade Level Table
 class GradeLevel(db.Model):
@@ -51,6 +89,8 @@ class GradeLevel(db.Model):
     students = relationship('Student', backref='grade_level', lazy=True)
     classes = relationship('Class', backref='grade_level', lazy=True)
 
+    def __str__(self):
+        return self.name
 
 # Class Table
 class Class(db.Model):
@@ -61,6 +101,9 @@ class Class(db.Model):
 
     # Relationships
     students = relationship('Student', backref='class_relationship', lazy=True)
+
+    def __str__(self):
+        return self.name
 
 
 # Admin Table
@@ -77,10 +120,21 @@ class Student(db.Model):
     class_id = Column(Integer, ForeignKey(Class.id), nullable=False)  # Khóa ngoại trỏ đến Class
 
     # Relationships
-    user = relationship('User', backref='student', uselist=False)
-    results = relationship('Result', backref='student', lazy=True)
+    user = relationship('User', backref='student', uselist=False, cascade='all, delete')
+    results = relationship('Result', backref='student', lazy=True, cascade='all, delete')
     # class_ = relationship('Class', backref='student_relationship')  # Mối quan hệ với Class
 
+    def __str__(self):
+        return f"{self.user.username} - {self.user.name} - {self.user.sex} - {self.user.dob} - {self.user.phone}"
+
+    def calculate_gpa(self):
+        """
+        Tính điểm trung bình (GPA) của học sinh dựa trên bảng điểm (results).
+        """
+        if not self.results:
+            return 0
+        total_score = sum(r.average for r in self.results if r.average is not None)
+        return total_score / len(self.results)
 
 # Teacher Table
 class Teacher(db.Model):
@@ -88,9 +142,17 @@ class Teacher(db.Model):
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
 
     # Relationships
-    # user = relationship('User', backref='teacher', uselist=False)
-    subjects = relationship('Subject', secondary='teacher_subject', backref='teachers')  # Nhiều môn học
+    user = relationship('User', backref='teacher', uselist=False, cascade='all, delete')
+    subjects = relationship('Subject', secondary='teacher_subject', backref='teachers', cascade='all, delete') # Nhiều môn học
 
+    def __str__(self):
+        return f"{self.user.username} - {self.user.name} - {self.user.sex} - {self.user.dob} - {self.user.phone}"
+
+    def get_subjects(self):
+        """
+        Trả về danh sách các môn học mà giáo viên đang dạy.
+        """
+        return [subject.name for subject in self.subjects]
 
 # Employee Table
 class Employee(db.Model):
@@ -99,7 +161,10 @@ class Employee(db.Model):
     position = Column(String(100), nullable=True)
 
     # Relationships
-    # user = relationship('User', backref='employee', uselist=False)
+    user = relationship('User', backref='employee', uselist=False, cascade='all, delete')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.user.name} - {self.user.sex} - {self.user.dob} - {self.user.phone}"
 
 
 # Regulation Table
@@ -118,6 +183,8 @@ class Subject(db.Model):
     # Relationships
     results = relationship('Result', backref='subject', lazy=True)
 
+    def __str__(self):
+        return self.name
 
 # Semester Table
 class Semester(db.Model):
@@ -169,6 +236,10 @@ class TeacherSubject(db.Model):
     teacher = db.relationship('Teacher', backref='teacher_subjects')
     subject = db.relationship('Subject', backref='teacher_subjects')
 
+    def __str__(self):
+        return f"Teacher: {self.teacher.user.name}, Subject: {self.subject.name}"
+
+
 
 class StudentSubject(db.Model):
     __tablename__ = 'student_subject'
@@ -179,6 +250,8 @@ class StudentSubject(db.Model):
     student = db.relationship('Student', backref='student_subjects')
     subject = db.relationship('Subject', backref='student_subjects')
 
+    def __str__(self):
+        return f"Student: {self.student.user.name}, Subject: {self.subject.name}"
 
 class SemesterSubject(db.Model):
     __tablename__ = 'semester_subject'
@@ -190,6 +263,9 @@ class SemesterSubject(db.Model):
     subject = db.relationship('Subject', backref='semester_subjects')
 
 
+    def __str__(self):
+        return f"Semester: {self.semester.name}, Subject: {self.subject.name}"
+
 class ClassSubject(db.Model):
     __tablename__ = 'class_subject'
 
@@ -198,6 +274,9 @@ class ClassSubject(db.Model):
 
     class_ = db.relationship('Class', backref='class_subjects')
     subject = db.relationship('Subject', backref='class_subjects')
+
+    def __str__(self):
+        return f"Class: {self.class_.name}, Subject: {self.subject.name}"
 
 
 if __name__ == '__main__':

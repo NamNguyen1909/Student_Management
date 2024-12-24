@@ -208,41 +208,34 @@ def create_student_record(user_id, class_id):
 
 # =================================================================================================================
 
-def generate_md5_hash(password):
-    """
-    Tạo hash MD5 từ mật khẩu đầu vào.
-
-    Args:
-        password (str): Mật khẩu cần tạo hash.
-
-    Returns:
-        str: Chuỗi hash MD5 của mật khẩu.
-    """
-    if not isinstance(password, str):
-        raise ValueError("Password must be a string.")
-    return hashlib.md5(password.strip().encode('utf-8')).hexdigest()
 
 
 # =================================================================================================================
 
 def generate_username(role_prefix, user_role):
-
     """
-    Hàm tạo username dạng 'ST000001', 'TC000001' dựa trên role_prefix và user_role.
+    Tạo username dạng 'ST000001', 'TC000001' dựa trên role_prefix và user_role.
     """
-    # Lấy id lớn nhất của user thuộc user_role cụ thể
-    last_user = User.query.filter_by(user_role=user_role).order_by(User.id.desc()).first()
+    while True:
+        # Lấy user cuối cùng thuộc role cụ thể
+        last_user = User.query.filter_by(user_role=user_role).order_by(User.id.desc()).first()
 
-    # Nếu không có bản ghi nào, bắt đầu từ 1
-    if not last_user:
-        new_id = 1
-    else:
-        # Lấy id của bản ghi cuối cùng và cộng thêm 1
-        new_id = int(last_user.username[len(role_prefix):]) + 1
+        if not last_user or not last_user.username:
+            new_id = 1
+        else:
+            try:
+                new_id = int(last_user.username[len(role_prefix):]) + 1
+            except ValueError:
+                new_id = 1  # Phòng trường hợp username trước đó không hợp lệ
 
-    # Đảm bảo username có đủ 10 ký tự, bao gồm cả prefix
-    number_length = 10 - len(role_prefix) - len(str(new_id))
-    return f"{role_prefix}{str(new_id).zfill(number_length)}"
+        # Đảm bảo username có đủ 10 ký tự
+        number_length = 10 - len(role_prefix)
+        new_username = f"{role_prefix}{str(new_id).zfill(number_length)}"
+
+        # Kiểm tra xem username có tồn tại không
+        if not User.query.filter_by(username=new_username).first():
+            return new_username
+
 
 
 # =================================================================================================================
