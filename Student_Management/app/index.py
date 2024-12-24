@@ -108,7 +108,7 @@ def changepassword():
         else:
             return redirect("/")  # Default redirect
 
-    return render_template("changepassword.html")
+    return render_template("changepassword.html", UserRole=UserRole)
 
 @app.route('/teacher/editscore')
 @login_required
