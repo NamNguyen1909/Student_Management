@@ -116,9 +116,10 @@
                                               onsubmit="return confirm('Bạn có chắc chắn muốn xóa học sinh này?');">
                                             <button type="submit" class="btn btn-danger btn-sm">Xoá</button>
                                         </form>
+                                    </td>
                                     <td class="text-center">
                                         <!-- Nút chuyển lớp học -->
-                                        <form action="{{ url_for('move_student', student_id=student.id) }}"
+                                        <form action="{{ url_for('remove_student', student_id=student.id) }}"
                                               method="POST">
                                             <select name="class_id" class="form-select form-select-sm" required>
                                                 <option disabled selected>Chọn lớp mới</option>

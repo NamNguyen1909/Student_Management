@@ -558,7 +558,7 @@ def my_results():
                            student_username=student_username)
 
 
-# =============================================================================
+# =====================================================================================
 
 
 @app.route('/employee/register_student', methods=['GET', 'POST'])
@@ -626,7 +626,12 @@ def view_class():
     for class_ in classes:
         grade = class_.name[:2]  # Lấy 2 ký tự đầu tiên làm khối lớp
 
-        students = db.session.query(Student).filter_by(class_id=class_.id).all()
+        # Lọc học sinh có is_active = True
+        students = db.session.query(Student).join(User).filter(
+            Student.class_id == class_.id,
+            User.is_active == True
+        ).all()
+
         student_details = [
             {
                 'id': student.id,
@@ -649,40 +654,25 @@ def view_class():
     return render_template('employee/view_class.html', class_data_by_grade=class_data_by_grade, classes=classes)
 
 
-@app.route('/remove_student/<int:student_id>', methods=['POST'])
-@login_required
+@app.route('/employee/remove_student/<int:student_id>', methods=['POST'])
 def remove_student(student_id):
-    remove_student_from_class(student_id)
-
-    flash("Học sinh đã được xoá thành công", "success")
-    return redirect(url_for('view_class'))
-
-
-@app.route('/move_student/<int:student_id>', methods=['POST'])
-@login_required
-def move_student(student_id):
-    # Lấy lớp học mới từ form
-    class_id = request.form.get('class_id')
-
-    # Kiểm tra nếu có lớp học mới được chọn
-    if not class_id or class_id.strip() == "":
-        flash("Vui lòng chọn lớp học mới!", "danger")
-        return redirect(url_for('view_class'))
-
-    # Cập nhật lớp học của học sinh
     student = db.session.query(Student).filter_by(id=student_id).first()
+
     if student:
-        student.class_id = class_id
+        student.user.is_active = False
+
+        # Giảm sĩ số của lớp tương ứng nếu học sinh thuộc lớp
+        if student.class_id:
+            class_ = db.session.query(Class).filter_by(id=student.class_id).first()
+            if class_ and class_.si_so > 0:  # Đảm bảo sĩ số không âm
+                class_.si_so -= 1
+
         db.session.commit()
-        flash("Học sinh đã được chuyển lớp thành công", "success")
+        flash('Học sinh đã bị xóa thành công!', 'success')
     else:
-        flash("Học sinh không tồn tại", "danger")
+        flash('Không tìm thấy học sinh!', 'danger')
 
     return redirect(url_for('view_class'))
-
-
-
-
 
 
 if __name__ == "__main__":

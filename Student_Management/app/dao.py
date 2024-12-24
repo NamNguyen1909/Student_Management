@@ -1,6 +1,9 @@
 # Student_Management/app/dao.py
 
 import hashlib
+
+from sqlalchemy import false
+
 from app import app, db
 from app.models import *
 from sqlalchemy.orm import joinedload
@@ -544,20 +547,17 @@ def create_fake_data():
 
 
 def remove_student_from_class(student_id):
+    # Tìm học sinh theo student_id
     student = db.session.query(Student).filter_by(id=student_id).first()
 
     if student:
-        # Cập nhật sĩ số của lớp trước khi xóa học sinh
         class_ = db.session.query(Class).filter_by(id=student.class_id).first()
         if class_:
             class_.si_so -= 1
 
-        # Xóa học sinh khỏi lớp (cập nhật class_id thành None)
-        db.session.delete(student)
+        student.is_active = 0
+
         db.session.commit()
-
-
-
 
 
 if __name__ == '__main__':
