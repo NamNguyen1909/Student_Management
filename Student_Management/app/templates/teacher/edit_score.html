@@ -28,267 +28,122 @@
     </style>
 </head>
 <body>
-    <h1>BẢNG ĐIỂM MÔN HỌC</h1>
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">Logo</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-    <!-- Dropdown Selection -->
-    <form class="mb-4">
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label for="select-subject" class="form-label">Chọn môn học:</label>
-                <select id="select-subject" class="form-select">
-                    <option value="" disabled selected>-- Chọn môn học --</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="select-class" class="form-label">Chọn lớp:</label>
-                <select id="select-class" class="form-select" disabled>
-                    <option value="" disabled selected>-- Chọn lớp --</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="select-semester" class="form-label">Chọn học kỳ:</label>
-                <select id="select-semester" class="form-select" disabled>
-                    <option value="" disabled selected>-- Chọn học kỳ --</option>
-                </select>
-            </div>
+        <div class="collapse navbar-collapse" id="mynavbar">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Trang chủ</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/teacher/editscore">Nhập / sửa điểm</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/teacher/view_score">Xem bảng điểm</a>
+                </li>
+
+            </ul>
+
+            <!-- Thêm ms-auto để căn khối này sang phải -->
+            <ul class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item mr-3 ml-3">
+                    <a class="nav-link text-danger" href="/teacher">
+                        <img src="{{current_user.avatar}}" width="30" class="rounded-circle">
+                        <span class="ms-3">{{current_user.username}}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-info" href="/logout">Đăng xuất</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="/login">Đăng nhập</a>
+                </li>
+                {% endif %}
+            </ul>
         </div>
-        <button type="button" id="load-scores" class="btn btn-primary" disabled>Xem bảng điểm</button>
-    </form>
-
-    <!-- Display of Selected Details -->
-    <div id="details-display" class="mb-4" style="display: none;">
-        <p><strong>Lớp:</strong> <span id="selected-class"></span></p>
-        <p><strong>Môn:</strong> <span id="selected-subject"></span></p>
-        <p><strong>Học kỳ:</strong> <span id="selected-semester"></span></p>
-        <p><strong>Năm học:</strong> <span id="selected-year"></span></p>
     </div>
+</nav>
 
-    <!-- Score Table -->
-    <div>
-        <table id="students-table" class="table table-bordered table-striped score-table" style="display: none;">
-            <thead class="table-dark">
-                <tr>
-                    <th>STT</th>
-                    <th>Họ Tên</th>
-                    <th>Điểm 15 phút</th>
-                    <th>Điểm 1 tiết</th>
-                    <th>Điểm thi</th>
-                    <th>Thao tác</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <button type="button" id="save-scores" class="btn btn-success mt-3" style="display: none;">Lưu Điểm</button>
+
+<h1 class="mt-3">BẢNG ĐIỂM MÔN HỌC</h1>
+
+<!-- Container cho thông báo -->
+<div id="flash-container" class="position-fixed top-0 end-0 p-3 mt-6" style="z-index: 1050;"></div>
+
+
+<!-- Dropdown Selection -->
+<form class="mb-4">
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="select-subject" class="form-label">Chọn môn học:</label>
+            <select id="select-subject" class="form-select">
+                <option value="" disabled selected>-- Chọn môn học --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="select-class" class="form-label">Chọn lớp:</label>
+            <select id="select-class" class="form-select" disabled>
+                <option value="" disabled selected>-- Chọn lớp --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="select-semester" class="form-label">Chọn học kỳ:</label>
+            <select id="select-semester" class="form-select" disabled>
+                <option value="" disabled selected>-- Chọn học kỳ --</option>
+            </select>
+        </div>
     </div>
+    <button type="button" id="load-scores" class="btn btn-primary" disabled>Xem bảng điểm</button>
+</form>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const subjectDropdown = document.getElementById("select-subject");
-            const classDropdown = document.getElementById("select-class");
-            const semesterDropdown = document.getElementById("select-semester");
-            const loadScoresButton = document.getElementById("load-scores");
-            const studentsTable = document.getElementById("students-table");
-            const detailsDisplay = document.getElementById("details-display");
-            const saveScoresButton = document.getElementById("save-scores");
+<!-- Display of Selected Details -->
+<div id="details-display" class="mb-4" style="display: none;">
+    <p><strong>Lớp:</strong> <span id="selected-class"></span></p>
+    <p><strong>Môn:</strong> <span id="selected-subject"></span></p>
+    <p><strong>Học kỳ:</strong> <span id="selected-semester"></span></p>
+    <p><strong>Năm học:</strong> <span id="selected-year"></span></p>
+</div>
 
-            // Fetch subjects for current teacher
-            fetch('/api/get-subjects')
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(subject => {
-                        const option = document.createElement("option");
-                        option.value = subject.id;
-                        option.textContent = subject.name;
-                        subjectDropdown.appendChild(option);
-                    });
-                });
 
-            // Enable class dropdown on subject select
-            subjectDropdown.addEventListener("change", function () {
-                const subjectId = this.value;
-                classDropdown.disabled = false;
-                classDropdown.innerHTML = '<option value="" disabled selected>-- Chọn lớp --</option>';
-                semesterDropdown.disabled = true;
-                semesterDropdown.innerHTML = '<option value="" disabled selected>-- Chọn học kỳ --</option>';
+<div class="mb-3">
+    <button id="add-15min-score" class="btn btn-secondary btn-sm">Thêm cột điểm 15 phút</button>
+    <button id="remove-15min-score" class="btn btn-danger btn-sm">Xóa cột điểm 15 phút</button>
+    <button id="add-45min-score" class="btn btn-secondary btn-sm">Thêm cột điểm 45 phút</button>
+    <button id="remove-45min-score" class="btn btn-danger btn-sm">Xóa cột điểm 45 phút</button>
+</div>
 
-                fetch(`/api/get-classes/${subjectId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(cls => {
-                            const option = document.createElement("option");
-                            option.value = cls.id;
-                            option.textContent = cls.name;
-                            classDropdown.appendChild(option);
-                        });
-                    });
-            });
 
-            // Enable semester dropdown on class select
-            classDropdown.addEventListener("change", function () {
-                const classId = this.value;
-                semesterDropdown.disabled = false;
-                fetch(`/api/get-semesters/${classId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(semester => {
-                            const option = document.createElement("option");
-                            option.value = semester.id;
-                            option.textContent = semester.name;
-                            semesterDropdown.appendChild(option);
-                        });
-                    });
-            });
+<!-- Score Table -->
+<div>
+    <table id="students-table" class="table table-bordered table-striped score-table" style="display: none;">
+        <thead class="table-dark">
+        <tr>
+            <th>STT</th>
+            <th>Họ Tên</th>
+            <th>Điểm 15 phút</th>
+            <th>Điểm 1 tiết</th>
+            <th>Điểm thi</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button type="button" id="save-scores" class="btn btn-success mt-3" style="display: none;">Lưu Điểm</button>
+</div>
 
-            // Enable load scores button on semester select
-            semesterDropdown.addEventListener("change", function () {
-                loadScoresButton.disabled = false;
-            });
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script src="{{url_for('static', filename='js/script.js')}}"></script>
+<script src="{{url_for('static', filename='js/edit_score.js')}}"></script>
 
-            // Load students and scores
-loadScoresButton.addEventListener("click", function () {
-    const subject = subjectDropdown.options[subjectDropdown.selectedIndex].text;
-    const className = classDropdown.options[classDropdown.selectedIndex].text;
-    const semester = semesterDropdown.options[semesterDropdown.selectedIndex].text;
-
-    document.getElementById("selected-class").textContent = className;
-    document.getElementById("selected-subject").textContent = subject;
-    document.getElementById("selected-semester").textContent = semester;
-
-    detailsDisplay.style.display = "block";
-
-    // Gọi API lấy danh sách học sinh
-    fetch(`/api/get-students?class_id=${classDropdown.value}&subject_id=${subjectDropdown.value}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-                return;
-            }
-
-            const tbody = studentsTable.querySelector("tbody");
-            tbody.innerHTML = ""; // Xóa dữ liệu cũ nếu có
-
-            // Hiển thị danh sách học sinh
-            data.forEach((student, index) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${student.name}</td>
-                    <td><input type="number" class="form-control" min="0" max="10" data-student-id="${student.id}" data-type="score_15_min"></td>
-                    <td><input type="number" class="form-control" min="0" max="10" data-student-id="${student.id}" data-type="score_1_hour"></td>
-                    <td><input type="number" class="form-control" min="0" max="10" data-student-id="${student.id}" data-type="score_exam"></td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm" data-student-id="${student.id}">Xóa</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            // Hiển thị bảng và nút lưu điểm
-            studentsTable.style.display = "table";
-            saveScoresButton.style.display = "block";
-        })
-        .catch(error => {
-            console.error("Error fetching students:", error);
-        });
-});
-
-semesterDropdown.addEventListener("change", function () {
-    const semesterId = this.value;
-    const subjectId = subjectDropdown.value;
-
-    fetch(`/api/get-semester-year?semester_id=${semesterId}&subject_id=${subjectId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                document.getElementById("selected-year").textContent = data.year;
-                document.getElementById("selected-semester").textContent = data.semester_name;
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching semester year:", error);
-        });
-});
-
-loadScoresButton.addEventListener("click", function () {
-    // ... (lấy thông tin môn học, lớp, học kỳ)
-    fetch(`/api/get-scores?class_id=${classDropdown.value}&subject_id=${subjectDropdown.value}&semester_id=${semesterDropdown.value}`)
-        .then(res => res.json())
-        .then(data => {
-            const tbody = studentsTable.querySelector("tbody");
-            tbody.innerHTML = "";
-            const scoreTypes = data.score_types;
-
-            // Tạo header bảng dựa trên scoreTypes
-            const theadRow = studentsTable.querySelector("thead tr");
-            theadRow.innerHTML = "<th>STT</th><th>Họ Tên</th>";
-            scoreTypes.forEach(st => {
-                const th = document.createElement("th");
-                th.textContent = st.name;
-                theadRow.appendChild(th);
-            });
-            theadRow.appendChild(document.createElement("th")).textContent = "Thao tác";
-
-            data.students.forEach((student, index) => {
-                const row = tbody.insertRow();
-                row.insertCell().textContent = index + 1;
-                row.insertCell().textContent = student.name;
-
-                scoreTypes.forEach(st => {
-                    const cell = row.insertCell();
-                    const input = document.createElement("input");
-                    input.type = "number";
-                    input.classList.add("form-control");
-                    input.min = "0";
-                    input.max = "10";
-                    input.value = student.scores[st.name] || ""; // Hiển thị điểm nếu có
-                    input.dataset.studentId = student.id;
-                    input.dataset.scoreType = st.name;
-                    cell.appendChild(input);
-                });
-                row.insertCell().innerHTML = `<button type="button" class="btn btn-danger btn-sm" data-student-id="${student.id}">Xóa</button>`;
-
-            });
-            studentsTable.style.display = "table";
-            saveScoresButton.style.display = "block";
-        });
-});
-
-saveScoresButton.addEventListener('click', () => {
-    const studentRows = document.querySelectorAll('#students-table tbody tr');
-    const studentScores = [];
-
-    studentRows.forEach(row => {
-        const studentId = row.querySelector('input[data-student-id]').dataset.studentId;
-        const scoreInputs = row.querySelectorAll('input[data-score-type]');
-        const scores = {};
-        scoreInputs.forEach(input => {
-            scores[input.dataset.scoreType] = parseFloat(input.value) || null;
-        });
-        studentScores.push({ id: parseInt(studentId), scores });
-    });
-
-    const data = {
-        class_id: parseInt(classDropdown.value),
-        subject_id: parseInt(subjectDropdown.value),
-        semester_id: parseInt(semesterDropdown.value),
-        student_scores: studentScores
-    };
-
-    fetch('/api/save-scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(res => res.json()).then(data => {
-        alert(data.message);
-    });
-});
-        });
-    </script>
 </body>
 </html>

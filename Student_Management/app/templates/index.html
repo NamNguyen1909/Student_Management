@@ -7,24 +7,130 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
     <div class="container-fluid">
         <!-- Bên trái: Tên trường -->
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="/">
             <strong>School Name</strong>
         </a>
 
-        <!-- Bên phải: Nút Đăng nhập -->
+              <!-- Bên phải: Tùy thuộc vào trạng thái đăng nhập -->
+        {% if current_user.is_authenticated %}
+        <div class="d-flex align-items-center">
+            <!-- Hiển thị username và avatar -->
+            <a class="nav-link text-light d-flex align-items-center me-3"
+               href="
+               {% if current_user.user_role == UserRole.ADMIN %}
+                   /admin
+               {% elif current_user.user_role == UserRole.TEACHER %}
+                   /teacher
+               {% elif current_user.user_role == UserRole.EMPLOYEE %}
+                   /employee
+               {% elif current_user.user_role == UserRole.STUDENT %}
+                   /student
+               {% else %}
+                   /
+               {% endif %}">
+                <img src="{{ current_user.avatar }}" width="30" class="rounded-circle">
+                <span class="ms-2">{{ current_user.username }}</span>
+            </a>
+            <!-- Nút đăng xuất -->
+            <a class="btn btn-outline-light" href="/logout">Đăng xuất</a>
+        </div>
+        {% else %}
+        <!-- Nút đăng nhập khi chưa đăng nhập -->
         <div class="d-flex">
             <a href="/login" class="btn btn-light me-2">Đăng nhập</a>
         </div>
+        {% endif %}
     </div>
 </nav>
 
-<!-- Nội dung trang để test Navbar cố định -->
-<div class="container" style="margin-top: 80px;">
-    <h1>Welcome to Our School</h1>
-    <p>
-        Đây là nội dung chính của trang. Thanh navbar được cố định trên cùng màn hình.
-        Sử dụng lớp `fixed-top` để làm điều đó.
-    </p>
+<!-- Hero Section -->
+<div class="hero bg-light text-center py-5" style="margin-top: 80px;">
+    <h1 class="display-4">Welcome to Our School</h1>
+    <p class="lead">Empowering students to reach their full potential through exceptional education.</p>
+    <img src="{{ url_for('static', filename='images/anh1.jpg') }}" class="img-fluid rounded shadow" alt="Hero Image">
 </div>
+
+<!-- About Section -->
+<section class="container my-5">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <img src="{{ url_for('static', filename='images/anh2.jpg') }}" class="img-fluid rounded" alt="Classroom">
+        </div>
+        <div class="col-md-6">
+            <h2>About Us</h2>
+            <p>Our school is dedicated to providing a nurturing environment where students can grow academically, socially, and emotionally. We pride ourselves on our state-of-the-art facilities and experienced educators.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Our Features</h2>
+        <div class="row text-center">
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <img src="{{ url_for('static', filename='images/anh3.jpg') }}" class="card-img-top" alt="Library">
+                    <div class="card-body">
+                        <h5 class="card-title">Modern Library</h5>
+                        <p class="card-text">A vast collection of books and digital resources to support every student’s academic journey.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <img src="{{ url_for('static', filename='images/anh4.png') }}" class="card-img-top" alt="Sports">
+                    <div class="card-body">
+                        <h5 class="card-title">Sports Facilities</h5>
+                        <p class="card-text">Enjoy a variety of sports activities with our world-class sports facilities and programs.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <img src="{{ url_for('static', filename='images/anh5.jpg') }}" class="card-img-top" alt="Technology">
+                    <div class="card-body">
+                        <h5 class="card-title">Smart Classrooms</h5>
+                        <p class="card-text">Experience the future of learning in our technology-enabled smart classrooms.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Events Section -->
+<section class="container my-5">
+    <h2 class="text-center mb-4">Upcoming Events</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <img src="{{ url_for('static', filename='images/anh6.jpg') }}" class="card-img-top" alt="Event 1">
+                <div class="card-body">
+                    <h5 class="card-title">Science Fair 2024</h5>
+                    <p class="card-text">Explore the innovative projects of our talented students at the annual Science Fair.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow">
+                <img src="{{ url_for('static', filename='images/anh7.jpg') }}" class="card-img-top" alt="Event 2">
+                <div class="card-body">
+                    <h5 class="card-title">Annual Music Concert</h5>
+                    <p class="card-text">Join us for an evening of mesmerizing performances by our music students.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section class="bg-light py-5 text-center">
+    <div class="container">
+        <h2>Contact Us</h2>
+        <p>If you have any questions or need more information, feel free to reach out to us.</p>
+        <a href="/contact" class="btn btn-primary">Get in Touch</a>
+    </div>
+</section>
 
 {% endblock %}

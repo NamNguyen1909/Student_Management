@@ -1,20 +1,70 @@
+<title>Tiếp nhận học sinh</title>
 {% extends 'layout/base.html' %}
-
 {% block content %}
+
+    <!--Navbar-->
+    <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="javascript:void(0)">Logo</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mynavbar">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Trang chủ</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employee/register_student">Tiếp nhận học sinh</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employee/view_class">Xem danh sách lớp học</a>
+                    </li>
+
+                </ul>
+
+                <!-- Thêm ms-auto để căn khối này sang phải -->
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item mr-3 ml-3">
+                            <a class="nav-link text-danger" href="/employee">
+                                <img src="{{ current_user.avatar }}" width="30" class="rounded-circle">
+                                <span class="ms-3">{{ current_user.username }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-info" href="/logout">Đăng xuất</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-danger" href="/login">Đăng nhập</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Form tiếp nhận học sinh -->
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
                 <div class="card shadow-lg border-0 rounded">
                     <div class="card-body p-5">
-                        <h2 class="text-center mb-4 fs-3 fw-bold text-primary">Trang Tiếp Nhận Học Sinh</h2>
+                        <h2 class="text-center mb-4 fs-3 fw-bold text-primary">Tiếp Nhận Học Sinh</h2>
 
                         <!-- Thông báo thành công nằm ở góc trên bên phải -->
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
                                 {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show position-fixed" role="alert" id="flash-message" style="top: 10px; right: 10px; z-index: 1050;">
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show position-fixed"
+                                         role="alert" id="flash-message" style="top: 10px; right: 10px; z-index: 1050;">
                                         {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                                aria-label="Close"></button>
                                     </div>
                                 {% endfor %}
                             {% endif %}
@@ -23,46 +73,68 @@
                         <form method="POST" action="{{ url_for('register_student') }}" enctype="multipart/form-data">
                             <!-- Các trường form -->
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="full_name" name="full_name" required placeholder="Họ và Tên">
+                                <input type="text" class="form-control" id="full_name" name="full_name" required
+                                       placeholder="Họ và Tên">
                                 <label for="full_name">Họ và Tên</label>
                             </div>
 
                             <div class="form-floating mb-3">
-                                <input type="date" class="form-control" id="dob" name="dob" required placeholder="Ngày Sinh">
+                                <input type="date" class="form-control" id="dob" name="dob" required
+                                       placeholder="Ngày Sinh">
                                 <label for="dob">Ngày Sinh</label>
                             </div>
 
                             <div class="mb-3">
                                 <label for="gender" class="form-label">Giới Tính</label><br>
                                 <div class="form-check form-check-inline">
-                                    <input type="radio" id="male" name="gender" value="male" checked class="form-check-input">
+                                    <input type="radio" id="male" name="gender" value="male" checked
+                                           class="form-check-input">
                                     <label for="male" class="form-check-label">Nam</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input type="radio" id="female" name="gender" value="female" class="form-check-input">
+                                    <input type="radio" id="female" name="gender" value="female"
+                                           class="form-check-input">
                                     <label for="female" class="form-check-label">Nữ</label>
                                 </div>
                             </div>
 
                             <!-- Các trường nhập liệu khác -->
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="address" name="address" required placeholder="Địa Chỉ">
+                                <input type="text" class="form-control" id="address" name="address" required
+                                       placeholder="Địa Chỉ">
                                 <label for="address">Địa Chỉ</label>
                             </div>
+
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="phone" name="phone" required placeholder="Số Điện Thoại">
+                                <input type="text" class="form-control" id="phone" name="phone" required
+                                       placeholder="Số Điện Thoại">
                                 <label for="phone">Số Điện Thoại</label>
                             </div>
+
                             <div class="form-floating mb-3">
-                                <input type="email" class="form-control" id="email" name="email" required placeholder="Email">
+                                <input type="email" class="form-control" id="email" name="email" required
+                                       placeholder="Email">
                                 <label for="email">Email</label>
                             </div>
-                            <div class="form-floating mb-3">
-                                <input type="number" class="form-control" id="class_id" name="class_id" required placeholder="Lớp Học">
-                                <label for="class_id">Lớp Học</label>
+
+                            <div class="mb-3">
+                                <label for="class_id" class="form-label">Lớp Học</label>
+                                <select class="form-select" id="class_id" name="class_id" required>
+                                    <option value="" disabled selected>Chọn lớp học</option>
+                                    {% for class in classes %}
+                                        <option value="{{ class.id }}">{{ class.name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
+
+{#                            <div>#}
+{#                                <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*"#}
+{#                                       required>#}
+{#                            </div>#}
+
                             <div class="form-floating mb-3">
-                                <input type="password" class="form-control" id="password" name="password" required placeholder="Mật Khẩu">
+                                <input type="password" class="form-control mt-3" id="password" name="password" required
+                                       placeholder="Mật Khẩu">
                                 <label for="password">Mật Khẩu</label>
                             </div>
 
@@ -76,14 +148,14 @@
         </div>
     </div>
 
-    <!-- Thêm script JavaScript để ẩn thông báo sau 2 giây -->
+    <!--Ẩn thông báo sau 2 giây -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             // Kiểm tra nếu có thông báo
             var flashMessage = document.getElementById("flash-message");
             if (flashMessage) {
                 // Ẩn thông báo sau 2 giây
-                setTimeout(function() {
+                setTimeout(function () {
                     flashMessage.classList.remove("show");
                     flashMessage.classList.add("fade");
                 }, 2000);
@@ -92,4 +164,3 @@
     </script>
 
 {% endblock %}
-
