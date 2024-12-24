@@ -258,14 +258,12 @@ def generate_username(role_prefix, user_role):
 # =================================================================================================================
 
 def employee_classes():
-    # Lấy danh sách lớp học từ database
     classes = Class.query.all()
     return classes
 
 
 # Check quy định
 def check_regulation_for_student(dob: datetime) -> bool:
-    # Lấy quy định độ tuổi từ bảng Regulation
     age_min_regulation = db.session.query(Regulation).filter(Regulation.name == "Độ tuổi tối thiểu").first()
     age_max_regulation = db.session.query(Regulation).filter(Regulation.name == "Độ tuổi tối đa").first()
 
