@@ -282,6 +282,13 @@ def check_regulation_for_student(dob: datetime) -> bool:
         return False
 
 
+def check_class_capacity(class_id):
+    class_ = db.session.query(Class).filter_by(id=class_id).first()
+    if class_ and class_.si_so >= 40:
+        return False
+    return True
+
+
 # =================================================================================================================
 
 
@@ -546,19 +553,103 @@ def create_fake_data():
     db.session.commit()
 
 
-def remove_student_from_class(student_id):
-    # Tìm học sinh theo student_id
+def get_class_data_by_grade():
+    classes = db.session.query(Class).all()
+
+    class_data_by_grade = {
+        '10': [],
+        '11': [],
+        '12': []
+    }
+
+    for class_ in classes:
+        grade = class_.name[:2]  # Lấy 2 ký tự đầu tiên làm khối lớp
+        students = db.session.query(Student).join(User).filter(
+            Student.class_id == class_.id,
+            User.is_active == True
+        ).all()
+
+        student_details = [
+            {
+                'id': student.id,
+                'name': student.user.name,
+                'sex': 'Nam' if student.user.sex else 'Nữ',
+                'dob': student.user.dob.strftime('%Y') if student.user.dob else 'N/A',
+                'address': student.user.address or 'N/A'
+            }
+            for student in students
+        ]
+
+        # Thêm lớp vào khối tương ứng
+        if grade in class_data_by_grade:
+            class_data_by_grade[grade].append({
+                'class_name': class_.name,
+                'si_so': class_.si_so,
+                'students': student_details
+            })
+
+    return class_data_by_grade, classes
+
+
+def remove_student_data(student_id):
     student = db.session.query(Student).filter_by(id=student_id).first()
 
     if student:
-        class_ = db.session.query(Class).filter_by(id=student.class_id).first()
-        if class_:
-            class_.si_so -= 1
+        student.user.end_date = datetime.now()
+        student.user.is_active = False
 
-        student.is_active = 0
+        if student.class_id:
+            class_ = db.session.query(Class).filter_by(id=student.class_id).first()
+            if class_ and class_.si_so > 0:
+                class_.si_so -= 1
 
         db.session.commit()
+        return True, 'Học sinh đã bị xóa thành công!'
+    else:
+        return False, 'Không tìm thấy học sinh!'
 
+
+def transfer_student(student_id, new_class_id):
+    student = db.session.query(Student).filter_by(id=student_id).first()
+
+    if not student:
+        return False, "Không tìm thấy học sinh!"
+
+    if not new_class_id or new_class_id == student.class_id:
+        return False, "Học sinh đã ở trong lớp này!"
+
+    # Lớp cũ
+    old_class = db.session.query(Class).filter_by(id=student.class_id).first()
+    if old_class and old_class.si_so > 0:
+        old_class.si_so -= 1
+
+    # Lớp mới
+    new_class = db.session.query(Class).filter_by(id=new_class_id).first()
+    if not new_class:
+        return False, "Không tìm thấy lớp học mới!"
+
+    if new_class.si_so >= 40:
+        return False, "Lớp học đã đầy, không thể chuyển học sinh vào!"
+
+    # Cập nhật thông tin lớp của học sinh
+    student.class_id = new_class_id
+    new_class.si_so += 1
+
+    db.session.commit()
+    return True, "Chuyển lớp thành công!"
+
+# Các hàm tạo lớp học
+def get_all_grade_levels():
+    return db.session.query(GradeLevel).all()
+
+def get_class_by_name(class_name):
+    return db.session.query(Class).filter_by(name=class_name).first()
+
+def create_new_class(class_name, grade_level_id):
+    new_class = Class(name=class_name, grade_level_id=int(grade_level_id))
+    db.session.add(new_class)
+    db.session.commit()
+    return new_class
 
 if __name__ == '__main__':
     with app.app_context():

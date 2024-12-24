@@ -584,6 +584,11 @@ def register_student():
         if avatar:
             res = cloudinary.uploader.upload(avatar)
 
+        # Kiểm tra số lượng lớp học
+        if not check_class_capacity(class_id):
+            flash('Lớp học đã đạt sĩ số tối đa (40 học sinh).', 'danger')
+            return redirect(url_for('register_student'))
+
         # Kiểm tra độ tuổi hợp lệ
         if not check_regulation_for_student(dob):
             flash('Độ tuổi không hợp lệ. Học sinh phải từ 15 đến 20 tuổi.', 'danger')
@@ -612,67 +617,70 @@ def register_student():
     return render_template('employee/register_student.html', classes=classes)
 
 
-@app.route('/employee/view_class', methods=['GET', 'POST'])
+@app.route('/employee/view_class', methods=['GET'])
 @login_required
 def view_class():
-    classes = db.session.query(Class).all()
+    class_data_by_grade, classes = get_class_data_by_grade()
 
-    class_data_by_grade = {
-        '10': [],
-        '11': [],
-        '12': []
-    }
-
-    for class_ in classes:
-        grade = class_.name[:2]  # Lấy 2 ký tự đầu tiên làm khối lớp
-
-        # Lọc học sinh có is_active = True
-        students = db.session.query(Student).join(User).filter(
-            Student.class_id == class_.id,
-            User.is_active == True
-        ).all()
-
-        student_details = [
-            {
-                'id': student.id,
-                'name': student.user.name,
-                'sex': 'Nam' if student.user.sex else 'Nữ',
-                'dob': student.user.dob.strftime('%Y') if student.user.dob else 'N/A',
-                'address': student.user.address or 'N/A'
-            }
-            for student in students
-        ]
-
-        # Thêm lớp vào khối tương ứng
-        if grade in class_data_by_grade:
-            class_data_by_grade[grade].append({
-                'class_name': class_.name,
-                'si_so': class_.si_so,
-                'students': student_details
-            })
-
-    return render_template('employee/view_class.html', class_data_by_grade=class_data_by_grade, classes=classes)
+    return render_template(
+        'employee/view_class.html',
+        class_data_by_grade=class_data_by_grade,
+        classes=classes
+    )
 
 
 @app.route('/employee/remove_student/<int:student_id>', methods=['POST'])
+@login_required
 def remove_student(student_id):
-    student = db.session.query(Student).filter_by(id=student_id).first()
+    success, message = remove_student_data(student_id)
 
-    if student:
-        student.user.is_active = False
-
-        # Giảm sĩ số của lớp tương ứng nếu học sinh thuộc lớp
-        if student.class_id:
-            class_ = db.session.query(Class).filter_by(id=student.class_id).first()
-            if class_ and class_.si_so > 0:  # Đảm bảo sĩ số không âm
-                class_.si_so -= 1
-
-        db.session.commit()
-        flash('Học sinh đã bị xóa thành công!', 'success')
-    else:
-        flash('Không tìm thấy học sinh!', 'danger')
-
+    flash(message, 'success' if success else 'danger')
     return redirect(url_for('view_class'))
+
+
+@app.route('/employee/transfer_student/<int:student_id>', methods=['POST'])
+@login_required
+def transfer_student_route(student_id):
+    new_class_id = request.form.get('class_id')
+
+    if not new_class_id:
+        flash("Vui lòng chọn lớp học mới!", "danger")
+        return redirect(url_for('view_class'))
+
+    success, message = transfer_student(student_id, int(new_class_id))
+
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('view_class'))
+
+
+@app.route('/employee/create_class', methods=['GET', 'POST'])
+@login_required
+def create_class():
+    if request.method == 'POST':
+        # Lấy thông tin từ form
+        class_name = request.form.get('class_name')
+        grade_level_id = request.form.get('grade_level_id')
+
+        # Kiểm tra thông tin
+        if not class_name or not grade_level_id:
+            flash("Vui lòng điền đầy đủ thông tin!", "danger")
+            return redirect(url_for('create_class'))
+
+        # Kiểm tra lớp học đã tồn tại
+        existing_class = get_class_by_name(class_name)
+        if existing_class:
+            flash("Lớp học đã tồn tại!", "danger")
+            return redirect(url_for('create_class'))
+
+        # Tạo lớp học mới
+        create_new_class(class_name, grade_level_id)
+        flash("Tạo lớp học mới thành công!", "success")
+        return redirect(url_for('view_class'))
+
+    # Lấy danh sách khối lớp (grade levels)
+    grade_levels = get_all_grade_levels()
+    return render_template('employee/create_class.html', grade_levels=grade_levels)
+
 
 
 if __name__ == "__main__":

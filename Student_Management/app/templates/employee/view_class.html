@@ -37,6 +37,10 @@
                         <a class="nav-link" href="/employee/view_class">Xem danh sách lớp học</a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employee/create_class">Tạo mới lớp học</a>
+                    </li>
+
                 </ul>
 
                 <!-- Thêm ms-auto để căn khối này sang phải -->
@@ -119,7 +123,7 @@
                                     </td>
                                     <td class="text-center">
                                         <!-- Nút chuyển lớp học -->
-                                        <form action="{{ url_for('remove_student', student_id=student.id) }}"
+                                        <form action="{{ url_for('transfer_student_route', student_id=student.id) }}"
                                               method="POST">
                                             <select name="class_id" class="form-select form-select-sm" required>
                                                 <option disabled selected>Chọn lớp mới</option>
