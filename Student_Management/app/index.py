@@ -3,6 +3,7 @@ from app import login, dao
 from flask_login import login_user, logout_user, login_required
 from app.dao import *
 from sqlalchemy.exc import SQLAlchemyError
+import cloudinary.uploader
 
 import unicodedata
 from reportlab.lib.pagesizes import letter
@@ -222,6 +223,7 @@ def get_students():
         print(f"Error fetching students: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+
 @app.route('/api/check-or-create-result', methods=['POST'])
 @login_required
 def check_or_create_result():
@@ -282,6 +284,7 @@ def check_or_create_result():
         print(f"Error checking/creating result: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+
 @app.route('/api/save-scores', methods=['POST'])
 @login_required
 def save_scores():
@@ -297,9 +300,11 @@ def save_scores():
             scores = item.get('scores')
 
             if not student_id or not subject_id or not semester_id or not scores:
-                print(data)
                 return jsonify({'error': 'Missing required fields'}), 400
 
+            print(f"Checking or creating result for student_id: {student_id}, subject_id: {subject_id}, semester_id: {semester_id}")
+
+            # Kiểm tra hoặc tạo Result
             # Kiểm tra hoặc tạo Result
             result = Result.query.filter_by(
                 student_id=student_id,
@@ -307,8 +312,8 @@ def save_scores():
                 semester_id=semester_id
             ).first()
 
-            if not result:
-                return jsonify({'error': 'Result not found'}), 404
+            if result is None:
+                return jsonify({'error': 'Failed to create or find result'}), 400
 
             # Xử lý từng điểm
             for score in scores:
@@ -335,7 +340,7 @@ def save_scores():
 
         db.session.commit()
 
-        #Cập nhật điểm trung bình
+        # Cập nhật điểm trung bình
         calculate_average(result.id)
         db.session.commit()
 
@@ -345,6 +350,9 @@ def save_scores():
         print(f"Error saving scores: {e}")
         db.session.rollback()
         return jsonify({'error': 'Internal server error'}), 500
+
+
+
 
 @app.route('/teacher/view_score', methods=['GET', 'POST'])
 @login_required
@@ -630,67 +638,11 @@ def get_report():
 
 
 # =============================================================================
-
-
-# @app.route('/employee/register_student')
-# @login_required
-# def register_student():
-#     return render_template('/employee/register_student.html')
-
-@app.route('/employee/create_class')
-@login_required
-def create_class():
-    return render_template('/employee/create_class.html')
-
-
-# @app.route('/register_student', methods=['GET', 'POST'])
-# def register_student():
-#     err_msg = ''
-#     if request.method == 'POST':
-#         username = request.form.get('username')
-#         full_name = request.form.get('full_name')
-#         dob = request.form.get('dob')
-#         gender = request.form.get('gender')
-#         address = request.form.get('address')
-#         phone = request.form.get('phone')
-#         email = request.form.get('email')
-#         class_id = request.form.get('class_id')
-#         password = request.form.get('password')
-#
-#         dob = datetime.strptime(dob, '%Y-%m-%d')
-#
-#         if not check_regulation_for_student(dob):
-#             err_msg = 'Độ tuổi không hợp lệ. Học sinh phải từ 15 đến 20 tuổi.'
-#         else:
-#             # Thêm người dùng vào bảng User
-#             user = User(
-#                 username=username,
-#                 password=password,
-#                 name=full_name,
-#                 dob=dob,
-#                 sex=True if gender == 'male' else False,
-#                 address=address,
-#                 phone=phone,
-#                 email=email
-#             )
-#             db.session.add(user)
-#             db.session.commit()
-#
-#             # Thêm học sinh vào bảng Student
-#             try:
-#                 create_student_record(user.id, class_id)
-#                 flash("Học sinh đã được thêm thành công!", "success")
-#                 return redirect(url_for('register_student'))  # Redirect to the same page or any other page
-#             except ValueError as e:
-#                 err_msg = str(e)
-#
-#     return render_template('employee/register_student.html', err_msg=err_msg)
-
-
 @app.route('/employee/register_student', methods=['GET', 'POST'])
 @login_required
 def register_student():
-    err_msg = ''
+    classes = Class.query.all()
+
     if request.method == 'POST':
         # Lấy thông tin từ form
         full_name = request.form.get('full_name')
@@ -701,13 +653,23 @@ def register_student():
         email = request.form.get('email')
         class_id = request.form.get('class_id')
         password = request.form.get('password')
+        avatar = request.files.get('avatar')
 
         # Chuyển đổi dob thành datetime
         dob = datetime.strptime(dob, '%Y-%m-%d')
 
+        if avatar:
+            res = cloudinary.uploader.upload(avatar)
+
+        # Kiểm tra số lượng lớp học
+        if not check_class_capacity(class_id):
+            flash('Lớp học đã đạt sĩ số tối đa (40 học sinh).', 'danger')
+            return redirect(url_for('register_student'))
+
         # Kiểm tra độ tuổi hợp lệ
         if not check_regulation_for_student(dob):
-            err_msg = 'Độ tuổi không hợp lệ. Học sinh phải từ 15 đến 20 tuổi.'
+            flash('Độ tuổi không hợp lệ. Học sinh phải từ 15 đến 20 tuổi.', 'danger')
+            return redirect(url_for('register_student'))
         else:
             # Thêm người dùng vào bảng User
             user = User(
@@ -718,21 +680,91 @@ def register_student():
                 sex=True if gender == 'male' else False,
                 address=address,
                 phone=phone,
-                email=email
+                email=email,
+                avatar=res.get('secure_url')
             )
             db.session.add(user)
             db.session.commit()
 
             # Thêm học sinh vào bảng Student
-            try:
-                create_student_record(user.id, class_id)
-                flash("Học sinh đã được thêm thành công!", "success")
-                return redirect(url_for('register_student'))  # Redirect to the same page or any other page
-            except ValueError as e:
-                err_msg = str(e)
+            create_student_record(user.id, class_id)
+            db.session.commit()
 
-    return render_template('employee/register_student.html', err_msg=err_msg)
 
+            # Lấy tất cả các môn học của lớp
+            class_subjects = ClassSubject.query.filter_by(class_id=class_id).all()
+            for class_subject in class_subjects:
+                enroll_student_to_subject(user.students.id, class_subject.subject_id)
+
+            flash("Học sinh đã được thêm thành công và đã đăng ký tất cả các môn học của lớp!", "success")
+            return redirect(url_for('register_student'))
+
+    return render_template('employee/register_student.html', classes=classes)
+
+
+@app.route('/employee/view_class', methods=['GET'])
+@login_required
+def view_class():
+    class_data_by_grade, classes = get_class_data_by_grade()
+
+    return render_template(
+        'employee/view_class.html',
+        class_data_by_grade=class_data_by_grade,
+        classes=classes
+    )
+
+
+@app.route('/employee/remove_student/<int:student_id>', methods=['POST'])
+@login_required
+def remove_student(student_id):
+    success, message = remove_student_data(student_id)
+
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('view_class'))
+
+
+@app.route('/employee/transfer_student/<int:student_id>', methods=['POST'])
+@login_required
+def transfer_student_route(student_id):
+    new_class_id = request.form.get('class_id')
+
+    if not new_class_id:
+        flash("Vui lòng chọn lớp học mới!", "danger")
+        return redirect(url_for('view_class'))
+
+    success, message = transfer_student(student_id, int(new_class_id))
+
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('view_class'))
+
+
+@app.route('/employee/create_class', methods=['GET', 'POST'])
+@login_required
+def create_class():
+    if request.method == 'POST':
+        # Lấy thông tin từ form
+        class_name = request.form.get('class_name')
+        grade_level_id = request.form.get('grade_level_id')
+
+        # Kiểm tra thông tin
+        if not class_name or not grade_level_id:
+            flash("Vui lòng điền đầy đủ thông tin!", "danger")
+            return redirect(url_for('create_class'))
+
+        # Kiểm tra lớp học đã tồn tại
+        existing_class = get_class_by_name(class_name)
+        if existing_class:
+            flash("Lớp học đã tồn tại!", "danger")
+            return redirect(url_for('create_class'))
+
+        # Tạo lớp học mới
+        create_new_class(class_name, grade_level_id)
+        flash("Tạo lớp học mới thành công!", "success")
+        return redirect(url_for('view_class'))
+
+    # Lấy danh sách khối lớp (grade levels)
+    grade_levels = get_all_grade_levels()
+    return render_template('employee/create_class.html', grade_levels=grade_levels)
 
 
 
@@ -743,4 +775,4 @@ def register_student():
 
 if __name__ == "__main__":
     from app.admin import *
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

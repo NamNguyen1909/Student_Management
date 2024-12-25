@@ -1,6 +1,7 @@
 # Student_Management/app/dao.py
 
 import hashlib
+from sqlalchemy import false
 from app import app, db
 from app.models import *
 from sqlalchemy.orm import joinedload
@@ -56,6 +57,9 @@ def calculate_average(result_id):
     db.session.commit()
 
     return {"message": "Average calculated successfully.", "average": result.average}
+
+
+
 # ==========================================================================================================================
 
 def assign_subject_to_class(class_id, subject_id):
@@ -237,6 +241,15 @@ def generate_username(role_prefix, user_role):
             return new_username
 
 
+def deactivate_user(model):
+    """Hàm này sẽ set is_active của người dùng thành False và cập nhật end_date"""
+    if model.is_active:  # Nếu người dùng hiện tại đang hoạt động
+        model.is_active = False
+        model.end_date = datetime.now()  # Gán end_date bằng thời gian hiện tại
+        db.session.commit()  # Lưu thay đổi vào cơ sở dữ liệu
+        print(f"User {model.username} has been deactivated and end_date has been set.")
+    else:
+        print(f"User {model.username} is already deactivated.")
 
 # =================================================================================================================
 
@@ -248,11 +261,12 @@ def employee_classes():
 # Check quy định
 def check_regulation_for_student(dob: datetime) -> bool:
     # Lấy quy định độ tuổi từ bảng Regulation
-    age_regulation = db.session.query(Regulation).filter(Regulation.name == "Độ tuổi tối thiểu").first()
+    age_min_regulation = db.session.query(Regulation).filter(Regulation.name == "Độ tuổi tối thiểu").first()
+    age_max_regulation = db.session.query(Regulation).filter(Regulation.name == "Độ tuổi tối đa").first()
 
-    if age_regulation:
-        min_age = age_regulation.value
-        max_age = min_age + 5
+    if age_min_regulation and age_max_regulation:
+        min_age = age_min_regulation.value
+        max_age = age_max_regulation.value
         age = (datetime.now() - dob).days // 365
 
         if min_age <= age <= max_age:
@@ -262,6 +276,11 @@ def check_regulation_for_student(dob: datetime) -> bool:
     else:
         return False
 
+def check_class_capacity(class_id):
+    class_ = db.session.query(Class).filter_by(id=class_id).first()
+    if class_ and class_.si_so >= 40:
+        return False
+    return True
 # =================================================================================================================
 
 
@@ -526,6 +545,115 @@ def create_fake_data():
 
     # Lưu thay đổi vào cơ sở dữ liệu
     db.session.commit()
+
+def get_class_data_by_grade():
+    classes = db.session.query(Class).all()
+
+    class_data_by_grade = {
+        '10': [],
+        '11': [],
+        '12': []
+    }
+
+    for class_ in classes:
+        grade = class_.name[:2]  # Lấy 2 ký tự đầu tiên làm khối lớp
+        students = db.session.query(Student).join(User).filter(
+            Student.class_id == class_.id,
+            User.is_active == True
+        ).all()
+
+        student_details = [
+            {
+                'id': student.id,
+                'name': student.user.name,
+                'sex': 'Nam' if student.user.sex else 'Nữ',
+                'dob': student.user.dob.strftime('%Y') if student.user.dob else 'N/A',
+                'address': student.user.address or 'N/A'
+            }
+            for student in students
+        ]
+
+        # Thêm lớp vào khối tương ứng
+        if grade in class_data_by_grade:
+            class_data_by_grade[grade].append({
+                'class_name': class_.name,
+                'si_so': class_.si_so,
+                'students': student_details
+            })
+
+    return class_data_by_grade, classes
+
+
+def remove_student_data(student_id):
+    student = db.session.query(Student).filter_by(id=student_id).first()
+
+    if student:
+        student.user.end_date = datetime.now()
+        student.user.is_active = False
+
+        if student.class_id:
+            class_ = db.session.query(Class).filter_by(id=student.class_id).first()
+            if class_ and class_.si_so > 0:
+                class_.si_so -= 1
+        db.session.commit()
+        return True, 'Học sinh đã bị xóa thành công!'
+    else:
+        return False, 'Không tìm thấy học sinh!'
+
+# def remove_student_from_class(student_id):
+#     student = db.session.query(Student).filter_by(id=student_id).first()
+#
+#     if student:
+#         # Cập nhật sĩ số của lớp trước khi xóa học sinh
+#         class_ = db.session.query(Class).filter_by(id=student.class_id).first()
+#         if class_:
+#             class_.si_so -= 1
+#
+#         # Xóa học sinh khỏi lớp (cập nhật class_id thành None)
+#         student.is_active = 0
+#         db.session.commit()
+
+def transfer_student(student_id, new_class_id):
+    student = db.session.query(Student).filter_by(id=student_id).first()
+
+    if not student:
+        return False, "Không tìm thấy học sinh!"
+
+    if not new_class_id or new_class_id == student.class_id:
+        return False, "Học sinh đã ở trong lớp này!"
+
+    # Lớp cũ
+    old_class = db.session.query(Class).filter_by(id=student.class_id).first()
+    if old_class and old_class.si_so > 0:
+        old_class.si_so -= 1
+
+    # Lớp mới
+    new_class = db.session.query(Class).filter_by(id=new_class_id).first()
+    if not new_class:
+        return False, "Không tìm thấy lớp học mới!"
+
+    if new_class.si_so >= 40:
+        return False, "Lớp học đã đầy, không thể chuyển học sinh vào!"
+
+    # Cập nhật thông tin lớp của học sinh
+    student.class_id = new_class_id
+    new_class.si_so += 1
+
+    db.session.commit()
+    return True, "Chuyển lớp thành công!"
+
+# Các hàm tạo lớp học
+def get_all_grade_levels():
+    return db.session.query(GradeLevel).all()
+
+def get_class_by_name(class_name):
+    return db.session.query(Class).filter_by(name=class_name).first()
+
+def create_new_class(class_name, grade_level_id):
+    new_class = Class(name=class_name, grade_level_id=int(grade_level_id))
+    db.session.add(new_class)
+    db.session.commit()
+    return new_class
 
 if __name__ == '__main__':
     with app.app_context():

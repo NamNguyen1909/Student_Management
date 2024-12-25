@@ -43,6 +43,8 @@ document.addEventListener("DOMContentLoaded", function () {
     classDropdown.addEventListener("change", function () {
         const classId = this.value;
         semesterDropdown.disabled = false;
+        semesterDropdown.innerHTML = '<option value="" disabled selected>-- Chọn học kỳ --</option>';
+
         fetch(`/api/get-semesters/${classId}`)
             .then(response => response.json())
             .then(data => {
@@ -126,8 +128,27 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch(error => {
                 console.error("Error fetching students:", error);
             });
-    });
 
+
+    });
+    document.getElementById("select-semester").addEventListener("change", function () {
+    const semesterId = this.value;
+    const subjectId = document.getElementById("select-subject").value;
+
+    if (semesterId && subjectId) {
+        fetch(`/api/get-semester-year?semester_id=${semesterId}&subject_id=${subjectId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error(data.error);
+                    document.getElementById("selected-year").textContent = "Không xác định";
+                } else {
+                    document.getElementById("selected-year").textContent = data.year;
+                }
+            })
+            .catch(error => console.error("Error fetching semester year:", error));
+    }
+});
 //    ==========================================================================================
 //    Hàm thông báo
     function showFlashMessage(message, isError = false) {

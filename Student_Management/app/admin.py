@@ -9,6 +9,7 @@ from app import app, db
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
 from app.models import UserRole, User, Class, Regulation, Employee, Teacher, Student,Semester
+from app.dao import deactivate_user
 
 
 class AuthenticatedView(BaseView):
@@ -52,7 +53,7 @@ class UserView(AuthenticatedAdmin):
     can_edit = True
     can_delete = False
     column_searchable_list = ['username', 'name']
-    column_list = ('username', 'name', 'sex', 'dob', 'address', 'phone', 'email', 'user_role')
+    column_list = ('username', 'name', 'sex', 'dob', 'address', 'phone', 'email','is_active', 'user_role')
     column_labels = {
         'username': 'Tên đăng nhập',
         'name': 'Họ tên',
@@ -60,6 +61,7 @@ class UserView(AuthenticatedAdmin):
         'dob': 'Ngày sinh',
         'address': 'Địa chỉ',
         'phone': 'SĐT',
+        'is_active':'Trạng thái',
         'user_role': 'Vai trò'
     }
     column_formatters = {
@@ -67,12 +69,18 @@ class UserView(AuthenticatedAdmin):
     }
 
     def on_model_change(self, form, model, is_created):
+        if not is_created:
+            # Gọi hàm deactivate_user nếu người dùng bị vô hiệu hóa
+            if not model.is_active:
+                deactivate_user(model)
+
+        # Tiến hành các bước khác nếu người dùng được tạo mới (is_created)
         if is_created:
             # Hash the password
             model.set_password(form.password.data)
             db.session.add(model)
             db.session.commit()
-            # Create the related role object based on the user_role
+            # Tạo đối tượng liên quan (Student, Teacher, Employee) dựa trên user_role
             if model.user_role == UserRole.STUDENT:
                 print("Creating Student object...")
                 student = Student(user=model)  # Automatically sets user_id
@@ -86,7 +94,6 @@ class UserView(AuthenticatedAdmin):
                 employee = Employee(user=model)  # Automatically sets user_id
                 db.session.add(employee)
 
-            # Commit changes
             try:
                 db.session.commit()
                 print("Commit successful!")
@@ -95,8 +102,6 @@ class UserView(AuthenticatedAdmin):
                 db.session.rollback()
 
         return super(UserView, self).on_model_change(form, model, is_created)
-
-
 
 class EmployeeView(AuthenticatedAdmin):
     can_create = False

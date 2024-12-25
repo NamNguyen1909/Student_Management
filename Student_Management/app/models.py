@@ -39,6 +39,7 @@ class User(db.Model, UserMixin):
     password = Column(String(100), nullable=False)
     avatar = Column(String(255), nullable=True,
                     default='https://res.cloudinary.com/ds05mb5xf/image/upload/v1734438824/avatar-default-symbolic-icon-479x512-n8sg74wg_rvl14k.png')
+
     name = Column(String(100), nullable=False)
     sex = Column(Boolean, default=True)
     dob = Column(DateTime)
@@ -64,21 +65,21 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return self.password == generate_md5_hash(password)
-
-    def create_related_entity(self):
-        """
-        Tạo thực thể liên quan (Student, Teacher, Employee) dựa trên vai trò của user.
-        """
-        if self.user_role == UserRole.STUDENT:
-            return Student(user=self)
-        elif self.user_role == UserRole.TEACHER:
-            return Teacher(user=self)
-        elif self.user_role == UserRole.EMPLOYEE:
-            return Employee(user=self)
-        elif self.user_role == UserRole.ADMIN:
-            return Admin(user=self)
-        else:
-            raise ValueError("Không thể tạo thực thể liên quan cho vai trò này.")
+    #
+    # def create_related_entity(self):
+    #     """
+    #     Tạo thực thể liên quan (Student, Teacher, Employee) dựa trên vai trò của user.
+    #     """
+    #     if self.user_role == UserRole.STUDENT:
+    #         return Student(user=self)
+    #     elif self.user_role == UserRole.TEACHER:
+    #         return Teacher(user=self)
+    #     elif self.user_role == UserRole.EMPLOYEE:
+    #         return Employee(user=self)
+    #     elif self.user_role == UserRole.ADMIN:
+    #         return Admin(user=self)
+    #     else:
+    #         raise ValueError("Không thể tạo thực thể liên quan cho vai trò này.")
 
 # Grade Level Table
 class GradeLevel(db.Model):
@@ -120,8 +121,8 @@ class Student(db.Model):
     class_id = Column(Integer, ForeignKey(Class.id), nullable=False)  # Khóa ngoại trỏ đến Class
 
     # Relationships
-    user = relationship('User', backref='student', uselist=False, cascade='all, delete')
-    results = relationship('Result', backref='student', lazy=True, cascade='all, delete')
+    user = relationship('User', backref='student', uselist=False)
+    results = relationship('Result', backref='student', lazy=True)
     # class_ = relationship('Class', backref='student_relationship')  # Mối quan hệ với Class
 
     def __str__(self):
@@ -148,11 +149,8 @@ class Teacher(db.Model):
     def __str__(self):
         return f"{self.user.username} - {self.user.name} - {self.user.sex} - {self.user.dob} - {self.user.phone}"
 
-    def get_subjects(self):
-        """
-        Trả về danh sách các môn học mà giáo viên đang dạy.
-        """
-        return [subject.name for subject in self.subjects]
+    # def get_subjects(self):
+    #     return [subject.name for subject in self.subjects]
 
 # Employee Table
 class Employee(db.Model):

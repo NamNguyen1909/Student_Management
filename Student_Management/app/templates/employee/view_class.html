@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách lớp học</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .col-stt {
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+{% extends 'layout/base.html' %}
+{% block content %}
+
+    <!--Navbar-->
+    <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="javascript:void(0)">Logo</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mynavbar">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Trang chủ</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employee/register_student">Tiếp nhận học sinh</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employee/view_class">Xem danh sách lớp học</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employee/create_class">Tạo mới lớp học</a>
+                    </li>
+
+                </ul>
+
+                <!-- Thêm ms-auto để căn khối này sang phải -->
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item mr-3 ml-3">
+                            <a class="nav-link text-danger" href="/employee">
+                                <img src="{{ current_user.avatar }}" width="30" class="rounded-circle">
+                                <span class="ms-3">{{ current_user.username }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-info" href="/logout">Đăng xuất</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-danger" href="/login">Đăng nhập</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Thông báo -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show position-fixed"
+                     role="alert" id="flash-message" style="top: 50px; right: 10px; z-index: 1050;">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                            aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container my-5">
+        <h1 class="text-center text-primary mb-4">Danh sách lớp học</h1>
+
+        {% for grade, classes in class_data_by_grade.items() %}
+            <div class="mb-5">
+                <h2 class="text-center text-success">Khối {{ grade }}</h2>
+                {% for class_ in classes %}
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-header bg-primary text-white border-primary">
+                            <h3 class="h5">Lớp: {{ class_.class_name }}</h3>
+                            <p class="mb-0">Sĩ số: {{ class_.si_so }}</p>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-primary">
+                                <tr>
+                                    <th class="col-stt">STT</th>
+                                    <th>Họ tên</th>
+                                    <th>Giới tính</th>
+                                    <th>Năm sinh</th>
+                                    <th>Địa chỉ</th>
+                                    <th class="col-stt"></th>  <!-- Cột nút xoá -->
+                                    <th></th>  <!-- Cột nút chuyển -->
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for student in class_.students %}
+                                    <tr>
+                                    <td class="text-center">{{ loop.index }}</td>
+                                    <td>{{ student.name }}</td>
+                                    <td>{{ student.sex }}</td>
+                                    <td>{{ student.dob }}</td>
+                                    <td>{{ student.address }}</td>
+                                    <td class="text-center">
+                                        <!-- Nút xóa học sinh -->
+                                        <form class="mt-2"
+                                              action="{{ url_for('remove_student', student_id=student.id) }}"
+                                              method="POST"
+                                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa học sinh này?');">
+                                            <button type="submit" class="btn btn-danger btn-sm">Xoá</button>
+                                        </form>
+                                    </td>
+                                    <td class="text-center">
+                                        <!-- Nút chuyển lớp học -->
+                                        <form action="{{ url_for('remove_student', student_id=student.id) }}"
+                                              method="POST">
+                                            <select name="class_id" class="form-select form-select-sm" required>
+                                                <option disabled selected>Chọn lớp mới</option>
+                                                {% for grade, classes in class_data_by_grade.items() %}
+                                                    <optgroup label="Khối {{ grade }}">
+                                                        {% for class_ in classes %}
+                                                            <option value="{{ class_.id }}"
+                                                                    {% if student.class_id == class_.id %}
+                                                                    selected
+                                                                    {% endif %}>
+                                                                {{ class_.class_name }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </optgroup>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="submit" class="btn btn-success btn-sm mt-2">Chuyển</button>
+                                        </form>
+                                    </td>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Kiểm tra nếu có thông báo
+            var flashMessage = document.getElementById("flash-message");
+            if (flashMessage) {
+                // Ẩn thông báo sau 2 giây
+                setTimeout(function () {
+                    flashMessage.classList.remove("show");
+                    flashMessage.classList.add("fade");
+                }, 2000);
+            }
+        });
+    </script>
+{% endblock %}
+</body>
+</html>
