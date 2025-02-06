@@ -132,9 +132,9 @@
                                                         {% for class_ in classes %}
                                                             <option value="{{ class_.id }}"
                                                                     {% if student.class_id == class_.id %}
-                                                                    selected
+                                                                        selected
                                                                     {% endif %}>
-                                                                {{ class_.class_name }}
+                                                                        {{ class_.class_name }}
                                                             </option>
                                                         {% endfor %}
                                                     </optgroup>

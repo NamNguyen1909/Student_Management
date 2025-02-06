@@ -647,7 +647,7 @@ def transfer_student_route(student_id):
         flash("Vui lòng chọn lớp học mới!", "danger")
         return redirect(url_for('view_class'))
 
-    success, message = transfer_student(student_id, int(new_class_id))
+    success, message = transfer_student(student_id, new_class_id)
 
     flash(message, 'success' if success else 'danger')
     return redirect(url_for('view_class'))

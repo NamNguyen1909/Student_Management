@@ -623,6 +623,7 @@ def transfer_student(student_id, new_class_id):
 
     # Lớp mới
     new_class = db.session.query(Class).filter_by(id=new_class_id).first()
+
     if not new_class:
         return False, "Không tìm thấy lớp học mới!"
 
